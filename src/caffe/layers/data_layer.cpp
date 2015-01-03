@@ -79,6 +79,16 @@ void DataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
   }
 }
 
+template <typename Dtype>
+void DataLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top) {
+  // Reshape on single input batches for inputs of varying dimension.
+  if (this->prefetch_data_.num() == 1) {
+    top[0]->Reshape(1, this->prefetch_data_.channels(),
+        this->prefetch_data_.height(), this->prefetch_data_.width());
+  }
+}
+
 // This function is used to create a thread that prefetches the data.
 template <typename Dtype>
 void DataLayer<Dtype>::InternalThreadEntry() {
@@ -89,13 +99,23 @@ void DataLayer<Dtype>::InternalThreadEntry() {
   CPUTimer timer;
   CHECK(this->prefetch_data_.count());
   CHECK(this->transformed_data_.count());
+
+  const int batch_size = this->layer_param_.data_param().batch_size();
+  // Reshape on single input batches for inputs of varying dimension.
+  if (batch_size == 1) {
+    Datum datum = iter_->value;
+    this->prefetch_data_.Reshape(1, datum.channels(),
+        datum.height(), datum.width());
+    this->transformed_data_.Reshape(1, datum.channels(),
+        datum.height(), datum.width());
+  }
+
   Dtype* top_data = this->prefetch_data_.mutable_cpu_data();
   Dtype* top_label = NULL;  // suppress warnings about uninitialized variables
 
   if (this->output_labels_) {
     top_label = this->prefetch_label_.mutable_cpu_data();
   }
-  const int batch_size = this->layer_param_.data_param().batch_size();
   for (int item_id = 0; item_id < batch_size; ++item_id) {
     timer.Start();
     // get a blob
