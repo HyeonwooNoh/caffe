@@ -1,4 +1,5 @@
-# Caffe
+This is Caffe with several unmerged PRs and no guarantees.
 
-Caffe is a deep learning framework developed with cleanliness, readability, and speed in mind.<br />
-Consult the [project website](http://caffe.berkeleyvision.org) for all documentation.
+Everything here is subject to change, including the history of this branch.
+
+See `future.sh` for details.
