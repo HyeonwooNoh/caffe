@@ -57,7 +57,7 @@ void EltwiseAccuracyLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom
           bottom_data_vector.end(), std::greater<std::pair<Dtype, int> >());
       // check if true label is in top k predictions
       for (int k = 0; k < top_k_; k++) {
-        if (bottom_data_vector[k].second == static_cast<int>(bottom_label[i * dim + j])) {
+        if (bottom_data_vector[k].second == static_cast<int>(bottom_label[i * spatial_dim + j])) {
           ++accuracy;
           break;
         }
