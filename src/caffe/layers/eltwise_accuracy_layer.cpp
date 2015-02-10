@@ -19,21 +19,23 @@ void EltwiseAccuracyLayer<Dtype>::LayerSetUp(
 template <typename Dtype>
 void EltwiseAccuracyLayer<Dtype>::Reshape(
   const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
-
-  //TODO: have to reimplement this function
   CHECK_EQ(bottom[0]->num(), bottom[1]->num())
       << "The data and label should have the same number.";
   CHECK_LE(top_k_, bottom[0]->count() / bottom[0]->num())
       << "top_k must be less than or equal to the number of classes.";
   CHECK_EQ(bottom[1]->channels(), 1);
-  CHECK_EQ(bottom[1]->height(), 1);
-  CHECK_EQ(bottom[1]->width(), 1);
+      << "Label data should have channel 1.";
+  CHECK_EQ(bottom[0]->height(), bottom[1]->height());
+      << "The data and label should have the same height.";
+  CHECK_EQ(bottom[0]->width(), bottom[1]->width());
+      << "the data and label should have the same width.";
   top[0]->Reshape(1, 1, 1, 1);
 }
 
 template <typename Dtype>
 void EltwiseAccuracyLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
     const vector<Blob<Dtype>*>& top) {
+  //TODO: have to reimplement this function
   Dtype accuracy = 0;
   const Dtype* bottom_data = bottom[0]->cpu_data();
   const Dtype* bottom_label = bottom[1]->cpu_data();
