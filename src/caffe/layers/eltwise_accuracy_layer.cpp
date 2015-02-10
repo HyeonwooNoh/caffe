@@ -11,14 +11,16 @@
 namespace caffe {
 
 template <typename Dtype>
-void AccuracyLayer<Dtype>::LayerSetUp(
+void EltwiseAccuracyLayer<Dtype>::LayerSetUp(
   const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
-  top_k_ = this->layer_param_.accuracy_param().top_k();
+  top_k_ = this->layer_param_.eltwise_accuracy_param().top_k();
 }
 
 template <typename Dtype>
-void AccuracyLayer<Dtype>::Reshape(
+void EltwiseAccuracyLayer<Dtype>::Reshape(
   const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
+
+  //TODO: have to reimplement this function
   CHECK_EQ(bottom[0]->num(), bottom[1]->num())
       << "The data and label should have the same number.";
   CHECK_LE(top_k_, bottom[0]->count() / bottom[0]->num())
@@ -30,7 +32,7 @@ void AccuracyLayer<Dtype>::Reshape(
 }
 
 template <typename Dtype>
-void AccuracyLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
+void EltwiseAccuracyLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
     const vector<Blob<Dtype>*>& top) {
   Dtype accuracy = 0;
   const Dtype* bottom_data = bottom[0]->cpu_data();
@@ -63,6 +65,6 @@ void AccuracyLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   // Accuracy layer should not be used as a loss function.
 }
 
-INSTANTIATE_CLASS(AccuracyLayer);
-REGISTER_LAYER_CLASS(ACCURACY, AccuracyLayer);
+INSTANTIATE_CLASS(EltwiseAccuracyLayer);
+REGISTER_LAYER_CLASS(ELTWISE_ACCURACY, EltwiseAccuracyLayer);
 }  // namespace caffe
