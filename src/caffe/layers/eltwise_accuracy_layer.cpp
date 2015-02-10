@@ -35,35 +35,37 @@ void EltwiseAccuracyLayer<Dtype>::Reshape(
 template <typename Dtype>
 void EltwiseAccuracyLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
     const vector<Blob<Dtype>*>& top) {
-  //TODO: have to reimplement this function
   Dtype accuracy = 0;
   const Dtype* bottom_data = bottom[0]->cpu_data();
   const Dtype* bottom_label = bottom[1]->cpu_data();
   int num = bottom[0]->num();
   int dim = bottom[0]->count() / bottom[0]->num();
+  int spatial_dim = bottom[0]->height() * bottom[0]->width();
+  int channels = bottom[0]->channels();
   vector<Dtype> maxval(top_k_+1);
   vector<int> max_id(top_k_+1);
   for (int i = 0; i < num; ++i) {
-    // Top-k accuracy
-    std::vector<std::pair<Dtype, int> > bottom_data_vector;
-    for (int j = 0; j < dim; ++j) {
-      bottom_data_vector.push_back(
-          std::make_pair(bottom_data[i * dim + j], j));
-    }
-    std::partial_sort(
-        bottom_data_vector.begin(), bottom_data_vector.begin() + top_k_,
-        bottom_data_vector.end(), std::greater<std::pair<Dtype, int> >());
-    // check if true label is in top k predictions
-    for (int k = 0; k < top_k_; k++) {
-      if (bottom_data_vector[k].second == static_cast<int>(bottom_label[i])) {
-        ++accuracy;
-        break;
+    for (int j = 0; j < spatial_dim; j++){
+      // Top-k accuracy
+      std::vector<std::pair<Dtype, int> > bottom_data_vector;
+      for (int k = 0; k < channels; ++k) {
+        bottom_data_vector.push_back(
+          std::make_pair(bottom_data[i * dim + k * spatial_dim + j], k));
+      }
+      std::partial_sort(
+          bottom_data_vector.begin(), bottom_data_vector.begin() + top_k_,
+          bottom_data_vector.end(), std::greater<std::pair<Dtype, int> >());
+      // check if true label is in top k predictions
+      for (int k = 0; k < top_k_; k++) {
+        if (bottom_data_vector[k].second == static_cast<int>(bottom_label[i * dim + j])) {
+          ++accuracy;
+          break;
+        }
       }
     }
   }
-
-  // LOG(INFO) << "Accuracy: " << accuracy;
-  top[0]->mutable_cpu_data()[0] = accuracy / num;
+  // LOG(INFO) << "EltwiseAccuracy: " << eltwise_accuracy;
+  top[0]->mutable_cpu_data()[0] = accuracy / num / spatial_dim;
   // Accuracy layer should not be used as a loss function.
 }
 
