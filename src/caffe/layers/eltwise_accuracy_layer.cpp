@@ -23,11 +23,11 @@ void EltwiseAccuracyLayer<Dtype>::Reshape(
       << "The data and label should have the same number.";
   CHECK_LE(top_k_, bottom[0]->count() / bottom[0]->num())
       << "top_k must be less than or equal to the number of classes.";
-  CHECK_EQ(bottom[1]->channels(), 1);
+  CHECK_EQ(bottom[1]->channels(), 1)
       << "Label data should have channel 1.";
-  CHECK_EQ(bottom[0]->height(), bottom[1]->height());
+  CHECK_EQ(bottom[0]->height(), bottom[1]->height())
       << "The data and label should have the same height.";
-  CHECK_EQ(bottom[0]->width(), bottom[1]->width());
+  CHECK_EQ(bottom[0]->width(), bottom[1]->width())
       << "the data and label should have the same width.";
   top[0]->Reshape(1, 1, 1, 1);
 }
