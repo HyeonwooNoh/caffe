@@ -54,7 +54,7 @@ void EltwiseAccuracyLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom
   for (int i = 0; i < num; ++i) {
     for (int j = 0; j < spatial_dim; j++){
       const int label_value = static_cast<int>(bottom_label[i * spatial_dim + j]);
-      if (has_ignore_label_ && label_value == ignore_label_)
+      if (has_ignore_label_ && label_value == ignore_label_) {
         ignored_pixel_num++;
         continue;
       }
