@@ -16,9 +16,9 @@ void EltwiseAccuracyLayer<Dtype>::LayerSetUp(
   top_k_ = this->layer_param_.eltwise_accuracy_param().top_k();
 
   has_ignore_label_ =
-    this->layer_param_.loss_param().has_ignore_label();
+    this->layer_param_.eltwise_accuracy_param().has_ignore_label();
   if (has_ignore_label_) {
-    ignore_label_ = this->layer_param_.loss_param().ignore_label();
+    ignore_label_ = this->layer_param_.eltwise_accuracy_param().ignore_label();
   }
 }
 
