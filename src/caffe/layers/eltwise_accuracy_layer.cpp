@@ -14,6 +14,12 @@ template <typename Dtype>
 void EltwiseAccuracyLayer<Dtype>::LayerSetUp(
   const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
   top_k_ = this->layer_param_.eltwise_accuracy_param().top_k();
+
+  has_ignore_label_ =
+    this->layer_param_.loss_param().has_ignore_label();
+  if (has_ignore_label_) {
+    ignore_label_ = this->layer_param_.loss_param().ignore_label();
+  }
 }
 
 template <typename Dtype>
@@ -42,10 +48,16 @@ void EltwiseAccuracyLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom
   int dim = bottom[0]->count() / bottom[0]->num();
   int spatial_dim = bottom[0]->height() * bottom[0]->width();
   int channels = bottom[0]->channels();
+  int ignored_pixel_num = 0;
   vector<Dtype> maxval(top_k_+1);
   vector<int> max_id(top_k_+1);
   for (int i = 0; i < num; ++i) {
     for (int j = 0; j < spatial_dim; j++){
+      const int label_value = static_cast<int>(bottom_label[i * spatial_dim + j]);
+      if (has_ignore_label_ && label_value == ignore_label_)
+        ignored_pixel_num++;
+        continue;
+      }
       // Top-k accuracy
       std::vector<std::pair<Dtype, int> > bottom_data_vector;
       for (int k = 0; k < channels; ++k) {
@@ -57,7 +69,7 @@ void EltwiseAccuracyLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom
           bottom_data_vector.end(), std::greater<std::pair<Dtype, int> >());
       // check if true label is in top k predictions
       for (int k = 0; k < top_k_; k++) {
-        if (bottom_data_vector[k].second == static_cast<int>(bottom_label[i * spatial_dim + j])) {
+        if (bottom_data_vector[k].second == label_value) {
           ++accuracy;
           break;
         }
@@ -65,7 +77,7 @@ void EltwiseAccuracyLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom
     }
   }
   // LOG(INFO) << "EltwiseAccuracy: " << eltwise_accuracy;
-  top[0]->mutable_cpu_data()[0] = accuracy / num / spatial_dim;
+  top[0]->mutable_cpu_data()[0] = accuracy / (num * spatial_dim - ignored_pixel_num);
   // Accuracy layer should not be used as a loss function.
 }
 

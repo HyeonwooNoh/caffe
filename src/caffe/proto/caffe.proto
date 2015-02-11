@@ -506,6 +506,8 @@ message EltwiseAccuracyParameter {
   // the top k scoring classes.  By default, only compare to the top scoring
   // class (i.e. argmax).
   optional uint32 top_k = 1 [default = 1];
+  // If specified, ignore instances with the given label.
+  optional int32 ignore_label = 2;
 }
 
 // Message that stores parameters used by ExpLayer
