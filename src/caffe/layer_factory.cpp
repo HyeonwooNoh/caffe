@@ -61,6 +61,23 @@ Layer<Dtype>* GetPoolingLayer(const LayerParameter& param) {
 
 REGISTER_LAYER_CREATOR(POOLING, GetPoolingLayer);
 
+// Get unpooling layer according to engine.
+template <typename Dtype>
+Layer<Dtype>* GetUnpoolingLayer(const LayerParameter& param) {
+  UnpoolingParameter_Engine engine = param.unpooling_param().engine();
+  if (engine == UnpoolingParameter_Engine_DEFAULT) {
+    engine = UnpoolingParameter_Engine_CAFFE;
+  }
+  if (engine == UnpoolingParameter_Engine_CAFFE) {
+    return new UnpoolingLayer<Dtype>(param);
+  } else {
+    LOG(FATAL) << "Layer " << param.name() << " has unknown engine.";
+  }
+}
+
+REGISTER_LAYER_CREATOR(UNPOOLING, GetUnpoolingLayer);
+
+
 // Get relu layer according to engine.
 template <typename Dtype>
 Layer<Dtype>* GetReLULayer(const LayerParameter& param) {

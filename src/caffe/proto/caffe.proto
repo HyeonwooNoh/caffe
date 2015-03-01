@@ -741,6 +741,7 @@ message UnpoolingParameter {
   optional uint32 unpool_w = 14; // destined unpooled map width
   enum Engine {
     DEFAULT = 0;
+    CAFFE = 1;
   }
   optional Engine engine = 11 [default = DEFAULT];
 }
