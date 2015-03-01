@@ -34,7 +34,8 @@ void UnpoolingLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
       << "Stride is stride OR stride_h and stride_w are required.";
   CHECK((!unpool_param.has_unpool_size() && unpool_param.has_unpool_h()
       && unpool_param.has_unpool_w())
-      || (!unpool_param.has_unpool_h() && !unpool_param.has_unpool_w()))
+      || (unpool_param.has_unpool_size() &&!unpool_param.has_unpool_h()
+      && !unpool_param.has_unpool_w()))
       << "Unpool is unpool_size OR unpool_h and unpool_w are required.";
 
   if (unpool_param.has_kernel_size()) {
