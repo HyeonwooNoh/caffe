@@ -535,7 +535,6 @@ class UnpoolingLayer : public Layer<Dtype> {
   int channels_;
   int height_, width_;
   int unpooled_height_, unpooled_width_;
-  Blob<int> max_idx_;
 };
 
 }  // namespace caffe
