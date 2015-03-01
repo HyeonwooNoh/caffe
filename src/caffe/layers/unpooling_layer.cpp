@@ -141,7 +141,7 @@ void UnpoolingLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
         bottom_data += bottom[0]->offset(0, 1);
         top_data += top[0]->offset(0, 1);
         if (use_bottom_mask) {
-          bottom_mask += top[0]->offset(0, 1);
+          bottom_mask += bottom[1]->offset(0, 1);
         } 
       }
     }
@@ -191,7 +191,7 @@ void UnpoolingLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
         bottom_diff += bottom[0]->offset(0, 1);
         top_diff += top[0]->offset(0, 1);
         if (use_bottom_mask) {
-          bottom_mask += top[0]->offset(0, 1);
+          bottom_mask += bottom[1]->offset(0, 1);
         } 
       }
     }
