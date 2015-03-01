@@ -14,7 +14,7 @@ __global__ void MaxUnpoolForward(const int nthreads, const Dtype* bottom_data,
     const int width, const int unpooled_height, const int unpooled_width,
     const int kernel_h, const int kernel_w, const int stride_h,
     const int stride_w, const int pad_h, const int pad_w, Dtype* top_data,
-    Dtype* bottom_mask) {
+    const Dtype* bottom_mask) {
   CUDA_KERNEL_LOOP(index, nthreads) {
     int pw = index % width;
     int ph = (index / width) % height;
@@ -25,8 +25,10 @@ __global__ void MaxUnpoolForward(const int nthreads, const Dtype* bottom_data,
     int upw = max(0, min(pw * stride_w - pad_w, unpooled_width - 1));
     int unpooled_index = uph * unpooled_width + upw;
 
+    top_data += (n * channels + c) * unpooled_height * unpooled_width;
     if (bottom_mask) {
-      top_data[bottom_mask[index]] = bottom_data[index]; 
+      const int mask_index = bottom_mask[index];
+      top_data[mask_index] = bottom_data[index]; 
     } else {
       top_data[unpooled_index] = bottom_data[index];
     } 
@@ -42,7 +44,7 @@ void UnpoolingLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
   caffe_gpu_set(top[0]->count(), Dtype(0.), top_data);
   // We'll get the mask from bottom[1] if it's of size >1.
   const bool use_bottom_mask = bottom.size() > 1;
-  Dtype* bottom_mask = NULL;
+  const Dtype* bottom_mask = NULL;
   switch (this->layer_param_.unpooling_param().unpool()) {
   case UnpoolingParameter_UnpoolMethod_MAX:
     if (use_bottom_mask) {
@@ -56,7 +58,7 @@ void UnpoolingLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
         bottom_mask);
     break;
   default:
-    LOG(FATAL) << "Unknown pooling method.";
+    LOG(FATAL) << "Unknown unpooling method.";
   }
   CUDA_POST_KERNEL_CHECK;
 }
@@ -64,7 +66,7 @@ void UnpoolingLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
 
 template <typename Dtype>
 __global__ void MaxUnpoolBackward(const int nthreads, const Dtype* top_diff,
-    const int* mask, const Dtype* bottom_mask, const int num, const int channels,
+    const Dtype* bottom_mask, const int num, const int channels,
     const int height, const int width, const int unpooled_height,
     const int unpooled_width, const int kernel_h, const int kernel_w,
     const int stride_h, const int stride_w, const int pad_h, const int pad_w,
@@ -81,8 +83,10 @@ __global__ void MaxUnpoolBackward(const int nthreads, const Dtype* top_diff,
     int upw = max(0, min(pw * stride_w - pad_w, unpooled_width - 1));
     int unpooled_index = uph * unpooled_width + upw;
 
+    top_diff += (n * channels + c) * unpooled_height * unpooled_width;
     if (bottom_mask) {
-      bottom_diff[index] = top_diff[bottom_mask[index]]; 
+      const int mask_index = bottom_mask[index];
+      bottom_diff[index] = top_diff[mask_index]; 
     } else {
       bottom_diff[index] = top_diff[unpooled_index];
     } 
@@ -108,13 +112,13 @@ void UnpoolingLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
     } 
     // NOLINT_NEXT_LINE(whitespace/operators)
     MaxUnpoolBackward<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
-        count, top_diff, mask, top_mask, top[0]->num(), channels_,
+        count, top_diff, bottom_mask, top[0]->num(), channels_,
         height_, width_, unpooled_height_, unpooled_width_,
         kernel_h_, kernel_w_, stride_h_, stride_w_, pad_h_, pad_w_,
         bottom_diff);
     break;
   default:
-    LOG(FATAL) << "Unknown pooling method.";
+    LOG(FATAL) << "Unknown unpooling method.";
   }
   CUDA_POST_KERNEL_CHECK;
 }

@@ -14,7 +14,7 @@ using std::min;
 using std::max;
 
 template <typename Dtype>
-void UnoolingLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
+void UnpoolingLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
   UnpoolingParameter unpool_param = this->layer_param_.unpooling_param();
 
@@ -63,13 +63,13 @@ void UnoolingLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
   if (pad_h_ != 0 || pad_w_ != 0) {
     CHECK( unpool_param.unpool()
         == UnpoolingParameter_UnpoolMethod_MAX)
-        << "Padding implemented only for max pooling.";
+        << "Padding implemented only for max unpooling.";
     CHECK_LT(pad_h_, kernel_h_);
     CHECK_LT(pad_w_, kernel_w_);
   }
 
   if (unpool_param.has_unpool_size()) {
-    unpooled_height_ = unpooled_width = unpool_param.unpool_size();
+    unpooled_height_ = unpooled_width_ = unpool_param.unpool_size();
   } else if (unpool_param.has_unpool_h() &&
         unpool_param.has_unpool_w()) {
     unpooled_height_ = unpool_param.unpool_h();
@@ -99,7 +99,7 @@ void UnpoolingLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
       unpooled_width_);
 }
 
-// TODO(Yangqing): Is there a faster way to do pooling in the channel-first
+// TODO(Yangqing): Is there a faster way to do unpooling in the channel-first
 // case?
 template <typename Dtype>
 void UnpoolingLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
@@ -109,8 +109,8 @@ void UnpoolingLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   const int top_count = top[0]->count();
   // We'll get the mask from bottom[1] if it's of size >1.
   const bool use_bottom_mask = bottom.size() > 1;
-  Dtype* bottom_mask = NULL;
-  // Different pooling methods. We explicitly do the switch outside the for
+  const Dtype* bottom_mask = NULL;
+  // Different unpooling methods. We explicitly do the switch outside the for
   // loop to save time, although this results in more code.
   switch (this->layer_param_.unpooling_param().unpool()) {
   case UnpoolingParameter_UnpoolMethod_MAX:
@@ -126,10 +126,11 @@ void UnpoolingLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
           for (int pw = 0; pw < width_; ++pw) {
             int uph = max(0,min(ph * stride_h_ - pad_h_, unpooled_height_-1));
             int upw = max(0,min(pw * stride_w_ - pad_w_, unpooled_width_-1)); 
-	    const int index = ph * pooled_width_ + pw;
+	    const int index = ph * width_ + pw;
             const int unpooled_index = uph * unpooled_width_ + upw; 
             if (use_bottom_mask) {
-              top_data[bottom_mask[index]] = bottom_data[index];
+              const int mask_index = bottom_mask[index];
+              top_data[mask_index] = bottom_data[index];
             } else {
               top_data[unpooled_index] = bottom_data[index];
             }
@@ -145,7 +146,7 @@ void UnpoolingLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
     }
     break;
   default:
-    LOG(FATAL) << "Unknown pooling method.";
+    LOG(FATAL) << "Unknown unpooling method.";
   }
 }
 
@@ -175,18 +176,19 @@ void UnpoolingLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
           for (int pw = 0; pw < width_; ++pw) {
             int uph = max(0,min(ph * stride_h_ - pad_h_, unpooled_height_-1));
             int upw = max(0,min(pw * stride_w_ - pad_w_, unpooled_width_-1)); 
-            const int index = ph * pooled_width_ + pw;
+            const int index = ph * width_ + pw;
             const int unpooled_index = uph * unpooled_width_ + upw; 
             if (use_bottom_mask) {
-              bottom_diff[index] = top_diff[bottom_mask[index]]; 
+              const int mask_index = bottom_mask[index];
+              bottom_diff[index] = top_diff[mask_index]; 
             } else {
               bottom_diff[index] = top_diff[unpooled_index];
             }
           }
         }
         // compute offset
-        bottom_data += bottom[0]->offset(0, 1);
-        top_data += top[0]->offset(0, 1);
+        bottom_diff += bottom[0]->offset(0, 1);
+        top_diff += top[0]->offset(0, 1);
         if (use_bottom_mask) {
           bottom_mask += top[0]->offset(0, 1);
         } 
@@ -194,7 +196,7 @@ void UnpoolingLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
     }
     break;
   default:
-    LOG(FATAL) << "Unknown pooling method.";
+    LOG(FATAL) << "Unknown unpooling method.";
   }
 }
 
