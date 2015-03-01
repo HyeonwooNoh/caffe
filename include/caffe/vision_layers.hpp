@@ -506,17 +506,17 @@ class UnpoolingLayer : public Layer<Dtype> {
   virtual inline LayerParameter_LayerType type() const {
     return LayerParameter_LayerType_UNPOOLING;
   }
-  virtual inline int ExactNumBottomBlobs() const { return 1; }
-  virtual inline int MinTopBlobs() const { return 1; }
+  virtual inline int ExactNumTopBlobs() const { return 1; }
+  virtual inline int MinBottomBlobs() const { return 1; }
   // MAX POOL layers can output an extra top blob for the mask;
   // others can only output the pooled inputs.
-  virtual inline int MaxTopBlobs() const {
-    return (this->layer_param_.unpooling_param().pool() ==
+  virtual inline int MaxBottomBlobs() const {
+    return (this->layer_param_.unpooling_param().unpool() ==
             UnpoolingParameter_UnpoolMethod_MAX) ? 2 : 1;
   }
   virtual inline DiagonalAffineMap<Dtype> coord_map() {
     return FilterMap<Dtype>(kernel_h_, kernel_w_, stride_h_, stride_w_,
-        pad_h_, pad_w_).inv();
+        pad_h_, pad_w_);
   }
 
  protected:
@@ -534,9 +534,7 @@ class UnpoolingLayer : public Layer<Dtype> {
   int pad_h_, pad_w_;
   int channels_;
   int height_, width_;
-  int pooled_height_, pooled_width_;
-  bool global_pooling_;
-  Blob<Dtype> rand_idx_;
+  int unpooled_height_, unpooled_width_;
   Blob<int> max_idx_;
 };
 

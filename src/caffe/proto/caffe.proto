@@ -736,9 +736,9 @@ message UnpoolingParameter {
   optional uint32 stride = 3 [default = 1]; // The stride (equal in Y, X)
   optional uint32 stride_h = 7; // The stride height
   optional uint32 stride_w = 8; // The stride width
-  optional uint32 unpool_size = 12;
-  optional uint32 unpool_h = 13;
-  optional uint32 unpool_w = 14;
+  optional uint32 unpool_size = 12; // destined unpooled map size
+  optional uint32 unpool_h = 13; // destined unpooled map height
+  optional uint32 unpool_w = 14; // destined unpooled map width
   enum Engine {
     DEFAULT = 0;
   }
