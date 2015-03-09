@@ -66,8 +66,6 @@ def _Net_forward(self, blobs=None, start=None, end=None, **kwargs):
         outputs = set(self.outputs + blobs)
 
     if kwargs:
-        if set(kwargs.keys()) != set(self.inputs):
-            raise Exception('Input blob arguments do not match net inputs.')
         # Set input according to defined shapes and make arrays single and
         # C-contiguous as Caffe expects.
         for in_, blob in kwargs.iteritems():
