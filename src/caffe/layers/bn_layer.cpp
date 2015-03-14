@@ -16,19 +16,13 @@ namespace caffe {
     x_norm_.Reshape(bottom[0]->num(), bottom[0]->channels(),
         bottom[0]->height(), bottom[0]->width());
 
-    // Figure out the dimensions
-    N_ = bottom[0]->num();
-    C_ = bottom[0]->channels();
-    H_ = bottom[0]->height();
-    W_ = bottom[0]->width();
-
     // mean
     spatial_mean_.Reshape(N_, C_, 1, 1);
     batch_mean_.Reshape(1, C_, 1, 1);
     // variance
     spatial_variance_.Reshape(N_, C_, 1, 1);
     batch_variance_.Reshape(1, C_, 1, 1);
-    // buffer blod
+    // buffer blob
     buffer_blob_.Reshape(N_, C_, H_, W_);
 
     // fill spatial multiplier
@@ -45,47 +39,16 @@ namespace caffe {
         batch_multiplier_data);
     caffe_set(batch_sum_multiplier_.count(), Dtype(0),
         batch_sum_multiplier_.mutable_cpu_diff());
-    this->param_propagate_down_.resize(this->blobs_.size(), true);
   }
   template <typename Dtype>
   void BNLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
-    top[0]->Reshape(bottom[0]->num(), bottom[0]->channels(),
-        bottom[0]->height(), bottom[0]->width());
-
-    x_norm_.Reshape(bottom[0]->num(), bottom[0]->channels(),
-        bottom[0]->height(), bottom[0]->width());
     // Figure out the dimensions
     N_ = bottom[0]->num();
     C_ = bottom[0]->channels();
     H_ = bottom[0]->height();
     W_ = bottom[0]->width();
     var_eps_ = 1e-9;
-
-    // mean
-    spatial_mean_.Reshape(N_, C_, 1, 1);
-    batch_mean_.Reshape(1, C_, 1, 1);
-    // variance
-    spatial_variance_.Reshape(N_, C_, 1, 1);
-    batch_variance_.Reshape(1, C_, 1, 1);
-    // buffer blod
-    buffer_blob_.Reshape(N_, C_, H_, W_);
-
-    // fill spatial multiplier
-    spatial_sum_multiplier_.Reshape(1, 1, H_, W_);
-    Dtype* spatial_multipl_data = spatial_sum_multiplier_.mutable_cpu_data();
-    caffe_set(spatial_sum_multiplier_.count(), Dtype(1),
-        spatial_multipl_data);
-    caffe_set(spatial_sum_multiplier_.count(), Dtype(0),
-        spatial_sum_multiplier_.mutable_cpu_diff());
-
-    // fill batch multiplier
-    batch_sum_multiplier_.Reshape(N_, 1, 1, 1);
-    Dtype* batch_multiplier_data = batch_sum_multiplier_.mutable_cpu_data();
-    caffe_set(batch_sum_multiplier_.count(), Dtype(1),
-        batch_multiplier_data);
-    caffe_set(batch_sum_multiplier_.count(), Dtype(0),
-        batch_sum_multiplier_.mutable_cpu_diff());
 
     // Check if we need to set up the weights
     if (this->blobs_.size() > 0) {
