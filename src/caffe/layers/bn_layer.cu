@@ -50,6 +50,16 @@ namespace caffe {
     caffe_gpu_sub(batch_mean_.count(), batch_variance_.gpu_data(),
       buffer_data, batch_variance_.mutable_gpu_data());  // variance
 
+    // save top[1] (batch_mean) and top[2] (batch_variance)
+    if (top.size() > 1) {
+        caffe_copy(batch_mean_.count(), batch_mean_.gpu_data(),
+            top[1].mutable_gpu_data());
+    }
+    if (top.size() > 2) {
+        caffe_copy(batch_variance_.count(), batch_variance_.gpu_data(),
+            top[2].mutable_gpu_data());
+    }
+
     // do mean and variance normalization
     // subtract mean
     caffe_gpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, N_, C_, 1, Dtype(1),

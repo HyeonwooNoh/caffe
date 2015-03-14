@@ -12,6 +12,14 @@ namespace caffe {
       const vector<Blob<Dtype>*>& top) {
     top[0]->Reshape(bottom[0]->num(), bottom[0]->channels(),
         bottom[0]->height(), bottom[0]->width());
+    if (top.size() > 1) {
+        // top blob for batch mean
+        top[1]->Reshape(1, C_, 1, 1);
+    }
+    if (top.size() > 2) {
+        // top blob for batch variance
+        top[2]->Reshape(1, C_, 1, 1);
+    }
 
     x_norm_.Reshape(bottom[0]->num(), bottom[0]->channels(),
         bottom[0]->height(), bottom[0]->width());
@@ -113,6 +121,16 @@ namespace caffe {
     caffe_sub(batch_mean_.count(), batch_variance_.cpu_data(),
         buffer_blob_.cpu_data(),
         batch_variance_.mutable_cpu_data());  // variance
+
+    // save top[1] (batch_mean) and top[2] (batch_variance)
+    if (top.size() > 1) {
+        caffe_copy(batch_mean_.count(), batch_mean_.cpu_data(),
+            top[1].mutable_cpu_data());
+    }
+    if (top.size() > 2) {
+        caffe_copy(batch_variance_.count(), batch_variance_.cpu_data(),
+            top[2].mutable_cpu_data());
+    }
 
     // do mean and variance normalization
     // subtract mean
