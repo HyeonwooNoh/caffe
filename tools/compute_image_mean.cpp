@@ -1,43 +1,62 @@
-// Copyright 2014 BVLC and contributors.
-
+#include <gflags/gflags.h>
 #include <glog/logging.h>
-#include <leveldb/db.h>
 #include <stdint.h>
 
 #include <algorithm>
 #include <string>
+#include <utility>
+#include <vector>
 
+#include "caffe/dataset_factory.hpp"
 #include "caffe/proto/caffe.pb.h"
 #include "caffe/util/io.hpp"
 
+using caffe::Dataset;
 using caffe::Datum;
 using caffe::BlobProto;
 using std::max;
+using std::pair;
+
+
+DEFINE_string(backend, "lmdb", "The backend for containing the images");
 
 int main(int argc, char** argv) {
   ::google::InitGoogleLogging(argv[0]);
-  if (argc != 3) {
-    LOG(ERROR) << "Usage: compute_image_mean input_leveldb output_file";
+
+#ifndef GFLAGS_GFLAGS_H_
+  namespace gflags = google;
+#endif
+
+  gflags::SetUsageMessage("Compute the mean_image of a set of images given by"
+        " a leveldb/lmdb or a list of images\n"
+        "Usage:\n"
+        "    compute_image_mean [FLAGS] INPUT_DB [OUTPUT_FILE]\n");
+
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
+
+  if (argc < 2 || argc > 3) {
+    gflags::ShowUsageWithFlagsRestrict(argv[0], "tools/compute_image_mean");
     return 1;
   }
 
-  leveldb::DB* db;
-  leveldb::Options options;
-  options.create_if_missing = false;
+  std::string db_backend = FLAGS_backend;
 
-  LOG(INFO) << "Opening leveldb " << argv[1];
-  leveldb::Status status = leveldb::DB::Open(
-      options, argv[1], &db);
-  CHECK(status.ok()) << "Failed to open leveldb " << argv[1];
+  caffe::shared_ptr<Dataset<std::string, Datum> > dataset =
+      caffe::DatasetFactory<std::string, Datum>(db_backend);
 
-  leveldb::ReadOptions read_options;
-  read_options.fill_cache = false;
-  leveldb::Iterator* it = db->NewIterator(read_options);
-  it->SeekToFirst();
-  Datum datum;
+  // Open db
+  CHECK(dataset->open(argv[1], Dataset<std::string, Datum>::ReadOnly));
+
   BlobProto sum_blob;
   int count = 0;
-  datum.ParseFromString(it->value().ToString());
+  // load first datum
+  Dataset<std::string, Datum>::const_iterator iter = dataset->begin();
+  Datum datum = iter->value;
+
+  if (DecodeDatum(&datum)) {
+    LOG(INFO) << "Decoding Datum";
+  }
+
   sum_blob.set_num(1);
   sum_blob.set_channels(datum.channels());
   sum_blob.set_height(datum.height());
@@ -49,18 +68,23 @@ int main(int argc, char** argv) {
     sum_blob.add_data(0.);
   }
   LOG(INFO) << "Starting Iteration";
-  for (it->SeekToFirst(); it->Valid(); it->Next()) {
-    // just a dummy operation
-    datum.ParseFromString(it->value().ToString());
-    const string& data = datum.data();
-    size_in_datum = std::max<int>(datum.data().size(), datum.float_data_size());
+  for (Dataset<std::string, Datum>::const_iterator iter = dataset->begin();
+      iter != dataset->end(); ++iter) {
+    Datum datum = iter->value;
+    DecodeDatum(&datum);
+
+    const std::string& data = datum.data();
+    size_in_datum = std::max<int>(datum.data().size(),
+        datum.float_data_size());
     CHECK_EQ(size_in_datum, data_size) << "Incorrect data field size " <<
         size_in_datum;
     if (data.size() != 0) {
+      CHECK_EQ(data.size(), size_in_datum);
       for (int i = 0; i < size_in_datum; ++i) {
         sum_blob.set_data(i, sum_blob.data(i) + (uint8_t)data[i]);
       }
     } else {
+      CHECK_EQ(datum.float_data_size(), size_in_datum);
       for (int i = 0; i < size_in_datum; ++i) {
         sum_blob.set_data(i, sum_blob.data(i) +
             static_cast<float>(datum.float_data(i)));
@@ -68,19 +92,32 @@ int main(int argc, char** argv) {
     }
     ++count;
     if (count % 10000 == 0) {
-      LOG(ERROR) << "Processed " << count << " files.";
+      LOG(INFO) << "Processed " << count << " files.";
     }
   }
+
   if (count % 10000 != 0) {
-    LOG(ERROR) << "Processed " << count << " files.";
+    LOG(INFO) << "Processed " << count << " files.";
   }
   for (int i = 0; i < sum_blob.data_size(); ++i) {
     sum_blob.set_data(i, sum_blob.data(i) / count);
   }
   // Write to disk
-  LOG(INFO) << "Write to " << argv[2];
-  WriteProtoToBinaryFile(sum_blob, argv[2]);
-
-  delete db;
+  if (argc == 3) {
+    LOG(INFO) << "Write to " << argv[2];
+    WriteProtoToBinaryFile(sum_blob, argv[2]);
+  }
+  const int channels = sum_blob.channels();
+  const int dim = sum_blob.height() * sum_blob.width();
+  std::vector<float> mean_values(channels, 0.0);
+  LOG(INFO) << "Number of channels: " << channels;
+  for (int c = 0; c < channels; ++c) {
+    for (int i = 0; i < dim; ++i) {
+      mean_values[c] += sum_blob.data(dim * c + i);
+    }
+    LOG(INFO) << "mean_value channel [" << c << "]:" << mean_values[c] / dim;
+  }
+  // Clean up
+  dataset->close();
   return 0;
 }
