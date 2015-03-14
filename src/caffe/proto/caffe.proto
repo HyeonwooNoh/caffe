@@ -399,6 +399,11 @@ message ArgMaxParameter {
 
 // Message that stores parameters used by BN (Batch Normalization)  layer
 message BNParameter {
+  enum BNMode {
+    LEARN = 0;
+    INFERENCE = 1;
+  }
+  optional BNMode bn_mode = 3 [default = LEARN];
   optional FillerParameter scale_filler = 1;  // The filler for the scale
   optional FillerParameter shift_filler = 2;  // The filler for the shift
 }
