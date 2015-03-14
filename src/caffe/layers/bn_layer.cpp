@@ -127,11 +127,11 @@ namespace caffe {
       // save top[1] (batch_mean) and top[2] (batch_variance)
       if (top.size() > 1) {
           caffe_copy(batch_mean_.count(), batch_mean_.cpu_data(),
-              top[1].mutable_cpu_data());
+              top[1]->mutable_cpu_data());
       }
       if (top.size() > 2) {
           caffe_copy(batch_variance_.count(), batch_variance_.cpu_data(),
-              top[2].mutable_cpu_data());
+              top[2]->mutable_cpu_data());
       }
 
       // do mean and variance normalization
@@ -209,7 +209,7 @@ namespace caffe {
           spatial_variance_.cpu_data(),
           spatial_sum_multiplier_.cpu_data(), Dtype(0),
           buffer_blob_.mutable_cpu_data());
-      caffe_mul(bottom_data.count(), bottom_data,
+      caffe_mul(buffer_blob_.count(), bottom_data,
           buffer_blob_.cpu_data(), top_data);
 
       // shift
@@ -396,6 +396,7 @@ namespace caffe {
       break;
     default:
       LOG(FATAL) << "Unknown BN mode.";
+    }
   }
 #ifdef CPU_ONLY
 STUB_GPU(BNLayer);
