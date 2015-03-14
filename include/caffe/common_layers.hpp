@@ -98,9 +98,6 @@ class BNLayer : public Layer<Dtype> {
             BNParameter_BNMode_LEARN) ? 3 : 1;
   }
 
-
-  virtual inline int ExactNumTopBlobs() const { return 1; }
-
  protected:
   virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top);
