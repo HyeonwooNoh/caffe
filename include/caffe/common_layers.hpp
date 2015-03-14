@@ -91,6 +91,14 @@ class BNLayer : public Layer<Dtype> {
     return LayerParameter_LayerType_BN;
   }
   virtual inline int ExactNumBottomBlobs() const { return 1; }
+  virtual inline int MinTopBlobs() const { return 1; }
+  // if the BNMode is "LEARN" mamximum 3 top blobs are available
+  virtual inline int MaxTopBlobs() const {
+    return (this->layer_param_.bn_param().bn_mode() ==
+            BNParameter_BNMode_LEARN) ? 3 : 1;
+  }
+
+
   virtual inline int ExactNumTopBlobs() const { return 1; }
 
  protected:
