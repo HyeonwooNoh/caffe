@@ -820,6 +820,52 @@ class SoftmaxWithLossLayer : public LossLayer<Dtype> {
   bool normalize_;
 };
 
+
+template <typename Dtype>
+class RedSoftmaxWithLossLayer : public LossLayer<Dtype> {
+ public:
+  explicit RedSoftmaxWithLossLayer(const LayerParameter& param)
+      : LossLayer<Dtype>(param),
+        softmax_layer_(new SoftmaxLayer<Dtype>(param)) {}
+  virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+  virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+
+  virtual inline LayerParameter_LayerType type() const {
+    return LayerParameter_LayerType_RED_SOFTMAX_LOSS;
+  }
+  virtual inline int ExactNumBottomBlobs() const { return -1; }
+  virtual inline int MinBottomBlobs() const { return 2; }
+  virtual inline int MaxBottomBlobs() const { return 3; }
+  virtual inline int ExactNumTopBlobs() const { return -1; }
+  virtual inline int MinTopBlobs() const { return 1; }
+  virtual inline int MaxTopBlobs() const { return 2; }
+
+ protected:
+  // TODO(Yangqing): implement the GPU version of red softmax loss.
+  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+  virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+
+  /// The internal SoftmaxLayer used to map predictions to a distribution.
+  shared_ptr<SoftmaxLayer<Dtype> > softmax_layer_;
+  /// prob stores the output probability predictions from the SoftmaxLayer.
+  Blob<Dtype> prob_;
+  /// bottom vector holder used in call to the underlying SoftmaxLayer::Forward
+  vector<Blob<Dtype>*> softmax_bottom_vec_;
+  /// top vector holder used in call to the underlying SoftmaxLayer::Forward
+  vector<Blob<Dtype>*> softmax_top_vec_;
+  /// Whether to ignore instances with a certain label.
+  bool has_ignore_label_;
+  /// The label indicating that an instance should be ignored.
+  int ignore_label_;
+  /// Whether to normalize the loss by the total number of values present
+  /// (otherwise just by the batch size).
+  bool normalize_;
+};
+
 }  // namespace caffe
 
 #endif  // CAFFE_LOSS_LAYERS_HPP_
