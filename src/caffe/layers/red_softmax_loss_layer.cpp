@@ -8,6 +8,9 @@
 
 namespace caffe {
 
+using std::min;
+using std::max;
+
 template <typename Dtype>
 void RedSoftmaxWithLossLayer<Dtype>::LayerSetUp(
     const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
@@ -52,6 +55,7 @@ void RedSoftmaxWithLossLayer<Dtype>::Forward_cpu(
   softmax_layer_->Forward(softmax_bottom_vec_, softmax_top_vec_);
   const Dtype* prob_data = prob_.cpu_data();
   const Dtype* label = bottom[1]->cpu_data();
+  Dtype* target_sum_data = target_sum_.mutable_cpu_data();
   int num = prob_.num();
   int dim = prob_.count() / num;
   int spatial_dim = prob_.height() * prob_.width();
@@ -65,8 +69,19 @@ void RedSoftmaxWithLossLayer<Dtype>::Forward_cpu(
       }
       DCHECK_GE(label_value, 0);
       DCHECK_LT(label_value, prob_.channels());
-      loss -= log(std::max(prob_data[i * dim + label_value * spatial_dim + j],
-                           Dtype(FLT_MIN)));
+
+      const int target_from = label_value * red_cls_num_ / cls_num_;
+      const int target_to = min(red_cls_num_, (label_value+1) * red_cls_num_ / cls_num_);
+      Dtype target_sum_val = 0;
+      for (int c = target_from; c < target_to; c++) {
+        target_sum_val += prob_data[i * dim + c * spatial_dim + j];
+      }
+      // compute loss
+      loss -= log(std::max(target_sum_val, Dtype(FLT_MIN)));
+
+      // save target sum data to use it for backpropagation
+      target_sum_data[i * spatial_dim + j] = target_sum_val;
+
       ++count;
     }
   }
