@@ -673,7 +673,7 @@ message PowerParameter {
   optional float shift = 3 [default = 0.0];
 }
 
-optional RedSoftmaxWithLossParameter {
+message RedSoftmaxWithLossParameter {
   // number of classes in ground truth label
   optional uint32 class_num = 1;
 } 
