@@ -536,6 +536,8 @@ message RedAccuracyParameter {
   optional uint32 top_k = 1 [default = 1];
   // If specified, ignore instances with the given label.
   optional int32 ignore_label = 2;
+  // number of classes in ground truth label
+  optional uint32 class_num = 3;
 }
 
 // Message that stores parameters used by ExpLayer

@@ -13,12 +13,25 @@ namespace caffe {
 template <typename Dtype>
 void RedAccuracyLayer<Dtype>::LayerSetUp(
   const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
+  softmax_bottom_vec_.clear();
+  softmax_bottom_vec_.push_back(bottom[0]);
+  softmax_top_vec_.clear();
+  softmax_top_vec_.push_back(&prob_);
+  softmax_layer_->SetUp(softmax_bottom_vec_, softmax_top_vec_);
+
   top_k_ = this->layer_param_.red_accuracy_param().top_k();
 
   has_ignore_label_ =
     this->layer_param_.red_accuracy_param().has_ignore_label();
   if (has_ignore_label_) {
     ignore_label_ = this->layer_param_.red_accuracy_param().ignore_label();
+  }
+
+  // set redendant class num & class num
+  red_cls_num_ = bottom[0]->channels();
+  cls_num_ = red_cls_num_;
+  if (this->layer_param_.red_softmax_loss_param().has_class_num()) {
+    cls_num_ = this->layer_param_.red_softmax_loss_param().class_num();
   }
 }
 
@@ -35,6 +48,9 @@ void RedAccuracyLayer<Dtype>::Reshape(
       << "The data and label should have the same height.";
   CHECK_EQ(bottom[0]->width(), bottom[1]->width())
       << "the data and label should have the same width.";
+
+  softmax_layer_->Reshape(softmax_bottom_vec_, softmax_top_vec_);
+
   top[0]->Reshape(1, 1, 1, 1);
 }
 
