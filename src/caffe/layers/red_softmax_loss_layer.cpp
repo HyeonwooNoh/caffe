@@ -38,6 +38,7 @@ void RedSoftmaxWithLossLayer<Dtype>::Reshape(
     const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
   LossLayer<Dtype>::Reshape(bottom, top);
   softmax_layer_->Reshape(softmax_bottom_vec_, softmax_top_vec_);
+  target_sum_.ReshapeLike(*bottom[1]);
   if (top.size() >= 2) {
     // softmax output
     top[1]->ReshapeLike(*bottom[0]);

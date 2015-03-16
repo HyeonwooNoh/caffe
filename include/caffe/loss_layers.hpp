@@ -869,7 +869,7 @@ class RedSoftmaxWithLossLayer : public LossLayer<Dtype> {
   // number of classes in bottom[1]
   int cls_num_;
   // summation of probability for ground truth class
-  Dtype target_sum_;
+  Blob<Dtype> target_sum_;
 };
 
 }  // namespace caffe
