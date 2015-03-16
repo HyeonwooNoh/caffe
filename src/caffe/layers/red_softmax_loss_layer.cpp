@@ -107,6 +107,7 @@ void RedSoftmaxWithLossLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& to
     const Dtype* prob_data = prob_.cpu_data();
     caffe_copy(prob_.count(), prob_data, bottom_diff);
     const Dtype* label = bottom[1]->cpu_data();
+    const Dtype* target_sum_data = target_sum_.cpu_data();
     int num = prob_.num();
     int dim = prob_.count() / num;
     int spatial_dim = prob_.height() * prob_.width();
@@ -119,7 +120,13 @@ void RedSoftmaxWithLossLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& to
             bottom_diff[i * dim + c * spatial_dim + j] = 0;
           }
         } else {
-          bottom_diff[i * dim + label_value * spatial_dim + j] -= 1;
+      	  const int target_from = label_value * red_cls_num_ / cls_num_;
+          const int target_to = min(red_cls_num_, (label_value+1) * red_cls_num_ / cls_num_);
+          const Dtype target_sum_val = target_sum_data[i * spatial_dim + j];
+          for (int c = target_from; c < target_to; c++) {
+            Dtype prob_val = prob_data[i * dim + c * spatial_dim + j];
+            bottom_diff[i * dim + c * spatial_dim + j] -= prob_val / target_sum_val; 
+          }   
           ++count;
         }
       }
