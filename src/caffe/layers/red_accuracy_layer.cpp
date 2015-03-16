@@ -10,6 +10,9 @@
 
 namespace caffe {
 
+using std::min;
+using std::max;
+
 template <typename Dtype>
 void RedAccuracyLayer<Dtype>::LayerSetUp(
   const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
@@ -57,6 +60,9 @@ void RedAccuracyLayer<Dtype>::Reshape(
 template <typename Dtype>
 void RedAccuracyLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
     const vector<Blob<Dtype>*>& top) {
+  // The forward pass computes the softmax prob values.
+  softmax_layer_->Forward(softmax_bottom_vec_, softmax_top_vec_);
+  const Dtype* prob_data = prob_.cpu_data();
   Dtype accuracy = 0;
   const Dtype* bottom_data = bottom[0]->cpu_data();
   const Dtype* bottom_label = bottom[1]->cpu_data();
@@ -76,7 +82,13 @@ void RedAccuracyLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       }
       // Top-k accuracy
       std::vector<std::pair<Dtype, int> > bottom_data_vector;
-      for (int k = 0; k < channels; ++k) {
+      for (int k = 0; k < cls_num_; ++k) {
+      	const int target_from = k * red_cls_num_ / cls_num_;
+      	const int target_to = min(red_cls_num_, (k+1) * red_cls_num_ / cls_num_);
+        Dtype target_sum_val = 0;
+        for (int c = target_from; c < target_to; c++) {
+          target_sum_val += prob_data[i * dim + c * spatial_dim + j];
+        }
         bottom_data_vector.push_back(
           std::make_pair(bottom_data[i * dim + k * spatial_dim + j], k));
       }
