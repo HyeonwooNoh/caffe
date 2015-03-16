@@ -24,6 +24,13 @@ void RedSoftmaxWithLossLayer<Dtype>::LayerSetUp(
     ignore_label_ = this->layer_param_.loss_param().ignore_label();
   }
   normalize_ = this->layer_param_.loss_param().normalize();
+
+  // set redendant class num & class num
+  red_cls_num_ = bottom[0]->channels();
+  cls_num_ = red_cls_num_
+  if (this->layer_param_.red_softmax_loss_param().has_class_num()) {
+    cls_num_ = this->layer_param_.red_softmax_loss_param().class_num();
+  }
 }
 
 template <typename Dtype>

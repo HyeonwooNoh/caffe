@@ -864,6 +864,12 @@ class RedSoftmaxWithLossLayer : public LossLayer<Dtype> {
   /// Whether to normalize the loss by the total number of values present
   /// (otherwise just by the batch size).
   bool normalize_;
+  // number of classes in bottom[0]
+  int red_cls_num_;
+  // number of classes in bottom[1]
+  int cls_num_;
+  // summation of probability for ground truth class
+  Dtype target_sum_;
 };
 
 }  // namespace caffe
