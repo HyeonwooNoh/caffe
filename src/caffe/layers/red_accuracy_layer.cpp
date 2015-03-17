@@ -33,8 +33,8 @@ void RedAccuracyLayer<Dtype>::LayerSetUp(
   // set redendant class num & class num
   red_cls_num_ = bottom[0]->channels();
   cls_num_ = red_cls_num_;
-  if (this->layer_param_.red_softmax_loss_param().has_class_num()) {
-    cls_num_ = this->layer_param_.red_softmax_loss_param().class_num();
+  if (this->layer_param_.red_accuracy_param().has_class_num()) {
+    cls_num_ = this->layer_param_.red_accuracy_param().class_num();
   }
 }
 
@@ -89,8 +89,7 @@ void RedAccuracyLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
         for (int c = target_from; c < target_to; c++) {
           target_sum_val += prob_data[i * dim + c * spatial_dim + j];
         }
-        bottom_data_vector.push_back(
-          std::make_pair(bottom_data[i * dim + k * spatial_dim + j], k));
+        bottom_data_vector.push_back(std::make_pair(target_sum_val, k));
       }
       std::partial_sort(
           bottom_data_vector.begin(), bottom_data_vector.begin() + top_k_,
