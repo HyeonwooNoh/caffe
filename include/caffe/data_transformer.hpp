@@ -66,6 +66,11 @@ class DataTransformer {
    */
 #ifndef OSX
   void Transform(const cv::Mat& cv_img, Blob<Dtype>* transformed_blob);
+
+  // jay add
+  void TransformImgAndSeg(const std::vector<cv::Mat>& cv_img_seg,
+    Blob<Dtype>* transformed_data_blob, Blob<Dtype>* transformed_label_blob,
+    const int ignore_label);
 #endif
 
   /**
