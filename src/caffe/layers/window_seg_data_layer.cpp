@@ -209,10 +209,10 @@ void WindowSegDataLayer<Dtype>::InternalThreadEntry() {
     }
     vector<int> window = windows_[lines_id_];
     // crop window out of image and warp it
-    int x1 = window[WindowDataLayer<Dtype>::X1];
-    int y1 = window[WindowDataLayer<Dtype>::Y1];
-    int x2 = window[WindowDataLayer<Dtype>::X2];
-    int y2 = window[WindowDataLayer<Dtype>::Y2];
+    int x1 = window[WindowSegDataLayer<Dtype>::X1];
+    int y1 = window[WindowSegDataLayer<Dtype>::Y1];
+    int x2 = window[WindowSegDataLayer<Dtype>::X2];
+    int y2 = window[WindowSegDataLayer<Dtype>::Y2];
     // compute padding 
     int pad_x1 = std::max(0, -x1);
     int pad_y1 = std::max(0, -y1);
