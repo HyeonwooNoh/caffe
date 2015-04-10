@@ -418,7 +418,7 @@ class WindowSegDataLayer : public ImageDimPrefetchingDataLayer<Dtype> {
 
   shared_ptr<Caffe::RNG> prefetch_rng_;
 
-  enum WindowField {X1, Y1, X2, Y2};
+  enum WindowField {X1, Y1, X2, Y2, NUM};
   vector<vector<int> > windows_;
 
   vector<std::pair<std::string, std::string> > lines_;
