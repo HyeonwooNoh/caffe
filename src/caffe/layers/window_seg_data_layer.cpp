@@ -55,6 +55,15 @@ void WindowSegDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& botto
       iss >> segfn;
     }
     lines_.push_back(std::make_pair(imgfn, segfn));
+    
+    int x1, y1, x2, y2;
+    iss >> x1 >> y1 >> x2 >> y2;
+    vector<int> window(WindowSegDataLayer::NUM);
+    window[WindowSegDataLayer::X1] = x1;
+    window[WindowSegDataLayer::Y1] = y1;
+    window[WindowSegDataLayer::X2] = x2;
+    window[WindowSegDataLayer::Y2] = y2;
+    windows_.push_back(window);
   }
 
   if (this->layer_param_.image_data_param().shuffle()) {
@@ -164,39 +173,81 @@ void WindowSegDataLayer<Dtype>::InternalThreadEntry() {
     top_data_dim_offset = this->prefetch_data_dim_.offset(item_id);
 
     std::vector<cv::Mat> cv_img_seg;
+    cv::Mat cv_img, cv_seg;
 
     // get a blob
     timer.Start();
     CHECK_GT(lines_size, lines_id_);
 
     int img_row, img_col;
-    cv_img_seg.push_back(ReadImageToCVMat(root_folder + lines_[lines_id_].first,
-	  new_height, new_width, is_color, &img_row, &img_col));
+    cv_img = ReadImageToCVMat(root_folder + lines_[lines_id_].first,
+	  0, 0, is_color, &img_row, &img_col);
 
     top_data_dim[top_data_dim_offset]     = static_cast<Dtype>(std::min(max_height, img_row));
     top_data_dim[top_data_dim_offset + 1] = static_cast<Dtype>(std::min(max_width, img_col));
 
-    if (!cv_img_seg[0].data) {
+    if (!cv_img.data) {
       DLOG(INFO) << "Fail to load img: " << root_folder + lines_[lines_id_].first;
     }
     if (label_type == ImageDataParameter_LabelType_PIXEL) {
-      cv_img_seg.push_back(ReadImageToCVMatNearest(root_folder + lines_[lines_id_].second,
-					    new_height, new_width, false));
-      if (!cv_img_seg[1].data) {
+      cv_seg = ReadImageToCVMatNearest(root_folder + lines_[lines_id_].second,
+					    0, 0, false);
+      if (!cv_seg.data) {
 	DLOG(INFO) << "Fail to load seg: " << root_folder + lines_[lines_id_].second;
       }
     }
     else if (label_type == ImageDataParameter_LabelType_IMAGE) {
       const int label = atoi(lines_[lines_id_].second.c_str());
-      cv::Mat seg(cv_img_seg[0].rows, cv_img_seg[0].cols, 
+      cv::Mat seg(cv_img.rows, cv_img.cols, 
 		  CV_8UC1, cv::Scalar(label));
-      cv_img_seg.push_back(seg);      
+      cv_seg = seg;      
     }
     else {
-      cv::Mat seg(cv_img_seg[0].rows, cv_img_seg[0].cols, 
+      cv::Mat seg(cv_img.rows, cv_img.cols, 
 		  CV_8UC1, cv::Scalar(ignore_label));
-      cv_img_seg.push_back(seg);
+      cv_seg = seg;
     }
+    vector<int> window = windows_[lines_id_];
+    // crop window out of image and warp it
+    int x1 = window[WindowDataLayer<Dtype>::X1];
+    int y1 = window[WindowDataLayer<Dtype>::Y1];
+    int x2 = window[WindowDataLayer<Dtype>::X2];
+    int y2 = window[WindowDataLayer<Dtype>::Y2];
+    // compute padding 
+    int pad_x1 = std::max(0, -x1);
+    int pad_y1 = std::max(0, -y1);
+    int pad_x2 = std::max(0, x2 - cv_img.cols + 1);
+    int pad_y2 = std::max(0, y2 - cv_img.rows + 1);
+    if (pad_x1 > 0 || pad_x2 > 0 || pad_y1 > 0 || pad_y2 > 0) {
+        cv::copyMakeBorder(cv_img, cv_img, pad_y1, pad_y2,
+            pad_x1, pad_x2, cv::BORDER_CONSTANT,
+            cv::Scalar(0,0,0)); 
+        cv::copyMakeBorder(cv_seg, cv_seg, pad_y1, pad_y2,
+            pad_x1, pad_x2, cv::BORDER_CONSTANT,
+            cv::Scalar(ignore_label));
+    }
+    // clip bounds
+    x1 = x1 + pad_x1;
+    x2 = x2 + pad_x1;
+    y1 = y1 + pad_y1;
+    y2 = y2 + pad_y1;
+    CHECK_GT(x1, -1);
+    CHECK_GT(y1, -1);
+    CHECK_LT(x2, cv_img.cols);
+    CHECK_LT(y2, cv_img.rows);
+   
+    // cropping
+    cv::Rect roi(x1, y1, x2-x1+1, y2-y1+1);
+    cv::Mat cv_cropped_img = cv_img(roi);
+    cv::Mat cv_cropped_seg = cv_seg(roi);
+    if (new_width > 0 && new_height > 0) {
+        cv::resize(cv_cropped_img, cv_cropped_img, 
+               cv::Size(new_width, new_height), 0, 0, cv::INTER_LINEAR);
+        cv::resize(cv_cropped_seg, cv_cropped_seg, 
+               cv::Size(new_width, new_height), 0, 0, cv::INTER_NEAREST);
+    }
+    cv_img_seg.push_back(cv_cropped_img);
+    cv_img_seg.push_back(cv_cropped_seg);
 
     read_time += timer.MicroSeconds();
     timer.Start();
