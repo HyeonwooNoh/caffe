@@ -180,7 +180,7 @@ void ImageSegDataLayer<Dtype>::InternalThreadEntry() {
       DLOG(INFO) << "Fail to load img: " << root_folder + lines_[lines_id_].first;
     }
     if (label_type == ImageDataParameter_LabelType_PIXEL) {
-      cv_img_seg.push_back(ReadImageToCVMat(root_folder + lines_[lines_id_].second,
+      cv_img_seg.push_back(ReadImageToCVMatNearest(root_folder + lines_[lines_id_].second,
 					    new_height, new_width, false));
       if (!cv_img_seg[1].data) {
 	DLOG(INFO) << "Fail to load seg: " << root_folder + lines_[lines_id_].second;

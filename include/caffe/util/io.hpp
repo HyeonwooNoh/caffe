@@ -132,6 +132,10 @@ cv::Mat ReadImageToCVMat(const string& filename,
     const int height, const int width, const bool is_color, 
     int* img_height=NULL, int* img_width=NULL);
 
+cv::Mat ReadImageToCVMatNearest(const string& filename,
+    const int height, const int width, const bool is_color, 
+    int* img_height=NULL, int* img_width=NULL);
+
 inline cv::Mat ReadImageToCVMat(const string& filename,
     const int height, const int width) {
   return ReadImageToCVMat(filename, height, width, true);
