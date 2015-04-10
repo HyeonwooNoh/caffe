@@ -137,6 +137,7 @@ void WindowSegDataLayer<Dtype>::ShuffleImages() {
   caffe::rng_t* prefetch_rng =
       static_cast<caffe::rng_t*>(prefetch_rng_->generator());
   shuffle(lines_.begin(), lines_.end(), prefetch_rng);
+  shuffle(windows_.begin(), windows_.end(), prefetch_rng);
 }
 
 // This function is used to create a thread that prefetches the data.
