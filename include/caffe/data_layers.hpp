@@ -393,6 +393,38 @@ class ImageSegDataLayer : public ImageDimPrefetchingDataLayer<Dtype> {
   int lines_id_;
 };
 
+template <typename Dtype>
+class WindowSegDataLayer : public ImageDimPrefetchingDataLayer<Dtype> {
+ public:
+  explicit WindowSegDataLayer(const LayerParameter& param)
+    : ImageDimPrefetchingDataLayer<Dtype>(param) {}
+  virtual ~WindowSegDataLayer();
+  virtual void DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+
+  virtual inline LayerParameter_LayerType type() const {
+    return LayerParameter_LayerType_IMAGE_DATA;
+  }
+  virtual inline int ExactNumBottomBlobs() const { return 0; }
+  virtual inline int ExactNumTopBlobs() const { return 3; }
+  virtual inline bool AutoTopBlobs() const { return true; }
+
+ protected:
+  virtual void ShuffleImages();
+  virtual void InternalThreadEntry();
+
+ protected:
+  Blob<Dtype> transformed_label_;
+
+  shared_ptr<Caffe::RNG> prefetch_rng_;
+
+  enum WindowField {X1, Y1, X2, Y2};
+  vector<vector<int> > windows_;
+
+  vector<std::pair<std::string, std::string> > lines_;
+  int lines_id_;
+};
+
 }  // namespace caffe
 
 #endif  // CAFFE_DATA_LAYERS_HPP_
