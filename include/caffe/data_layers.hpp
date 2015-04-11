@@ -450,11 +450,14 @@ class WindowInstSegDataLayer : public ImageDimPrefetchingDataLayer<Dtype> {
 
   shared_ptr<Caffe::RNG> prefetch_rng_;
 
-  enum WindowField {X1, Y1, X2, Y2,INST_LABEL,NUM};
-  vector<vector<int> > windows_;
+  typedef struct InstItems {
+    std::string imgfn;
+    std::string segfn;
+    std::string instfn;
+    int x1, y1, x2, y2, inst_label;
+  } INSTITEMS;
 
-  enum LineField {IMG, SEG, INST,FN_NUM};
-  vector<vector<std::string> > lines_;
+  vector<INSTITEMS> lines_;
   int lines_id_;
 };
 
