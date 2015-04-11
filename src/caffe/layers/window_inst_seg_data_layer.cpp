@@ -275,7 +275,7 @@ void WindowInstSegDataLayer<Dtype>::InternalThreadEntry() {
     for(int j=0; j < new_height; j++) {
         for(int i=0; i < new_width; i++) {
             int inst_val = static_cast<int>(cv_cropped_inst.at<uchar>(j,i));
-            if (inst_val != inst_label && inst_val != ignore_label ) {
+            if (inst_val != inst_label && inst_val != ignore_label && inst_val != 0) {
                 cv_cropped_seg.at<uchar>(j,i) = other_object_label;
             } 
         }
