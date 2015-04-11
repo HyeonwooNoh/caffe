@@ -228,7 +228,7 @@ message LayerParameter {
   // line above the enum. Update the next available ID when you add a new
   // LayerType.
   //
-  // LayerType next available ID: 48 (last added: WINDOW_SEG_DATA)
+  // LayerType next available ID: 49 (last added: WINDOW_INST_SEG_DATA)
   enum LayerType {
     // "NONE" layer type is 0th enum element so that we don't cause confusion
     // by defaulting to an existent LayerType (instead, should usually error if
@@ -280,6 +280,7 @@ message LayerParameter {
     UNPOOLING = 42; 
     WINDOW_DATA = 24;
     WINDOW_SEG_DATA = 47;
+    WINDOW_INST_SEG_DATA = 48;
     THRESHOLD = 31;
   }
   optional LayerType type = 5; // the layer type from the enum above
@@ -594,6 +595,7 @@ message ImageDataParameter {
   optional bool is_color = 11 [default = true];
   // This is the value seg for pixels or images where we don't know the label 
   optional int32 ignore_label = 15 [default = 255];
+  optional int32 other_object_label = 16 [default = 0];
   enum LabelType {
     NONE = 0;
     IMAGE = 1;
