@@ -277,7 +277,8 @@ void WindowInstSegDataLayer<Dtype>::InternalThreadEntry() {
     // masking based on inst map
     for(int j=0; j < new_height; j++) {
         for(int i=0; i < new_width; i++) {
-            if (cv_cropped_inst.at<uchar>(j,i) != inst_label) {
+            int inst_val = static_cast<int>(cv_cropped_inst.at<uchar>(j,i));
+            if (inst_val != inst_label && inst_val != ignore_label ) {
                 cv_cropped_seg.at<uchar>(j,i) = other_object_label;
             } 
         }
