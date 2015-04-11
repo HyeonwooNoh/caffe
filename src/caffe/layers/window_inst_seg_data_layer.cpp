@@ -51,10 +51,16 @@ void WindowInstSegDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& b
     string imgfn;
     iss >> imgfn;
     string segfn = "";
+    string instfn = "";
     if (label_type != ImageDataParameter_LabelType_NONE) {
       iss >> segfn;
+      iss >> instfn;
     }
-    lines_.push_back(std::make_pair(imgfn, segfn));
+    vector<std::string> line_fns(WindowInstSegDataLayer::FN_NUM);
+    line_fns[WindowInstSegDataLayer::IMG] = imgfn;
+    line_fns[WindowInstSegDataLayer::SEG] = segfn;
+    line_fns[WindowInstSegDataLayer::INST] = instfn;
+    lines_.push_back(line_fns);
     
     int x1, y1, x2, y2, inst_label;
     iss >> x1 >> y1 >> x2 >> y2 >> inst_label;
@@ -87,7 +93,7 @@ void WindowInstSegDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& b
   }
 
   // Read an image, and use it to initialize the top blob.
-  cv::Mat cv_img = ReadImageToCVMat(root_folder + lines_[lines_id_].first,
+  cv::Mat cv_img = ReadImageToCVMat(root_folder + lines_[lines_id_][WindowInstSegDataLayer::IMG],
                                     new_height, new_width, is_color);
   const int channels = cv_img.channels();
   const int height = cv_img.rows;
@@ -165,6 +171,7 @@ void WindowInstSegDataLayer<Dtype>::InternalThreadEntry() {
   const int new_width  = image_data_param.new_width();
   const int label_type = this->layer_param_.image_data_param().label_type();
   const int ignore_label = image_data_param.ignore_label();
+  const int other_object_label = image_data_param.other_object_label();
   const bool is_color  = image_data_param.is_color();
   string root_folder   = image_data_param.root_folder();
 
@@ -175,39 +182,51 @@ void WindowInstSegDataLayer<Dtype>::InternalThreadEntry() {
     top_data_dim_offset = this->prefetch_data_dim_.offset(item_id);
 
     std::vector<cv::Mat> cv_img_seg;
-    cv::Mat cv_img, cv_seg;
+    cv::Mat cv_img, cv_seg, cv_inst;
 
     // get a blob
     timer.Start();
     CHECK_GT(lines_size, lines_id_);
 
     int img_row, img_col;
-    cv_img = ReadImageToCVMat(root_folder + lines_[lines_id_].first,
+    cv_img = ReadImageToCVMat(root_folder + lines_[lines_id_][WindowInstSegDataLayer::IMG],
 	  0, 0, is_color, &img_row, &img_col);
 
     top_data_dim[top_data_dim_offset]     = static_cast<Dtype>(std::min(max_height, img_row));
     top_data_dim[top_data_dim_offset + 1] = static_cast<Dtype>(std::min(max_width, img_col));
 
     if (!cv_img.data) {
-      DLOG(INFO) << "Fail to load img: " << root_folder + lines_[lines_id_].first;
+      DLOG(INFO) << "Fail to load img: " << root_folder + lines_[lines_id_][WindowInstSegDataLayer::IMG];
     }
     if (label_type == ImageDataParameter_LabelType_PIXEL) {
-      cv_seg = ReadImageToCVMatNearest(root_folder + lines_[lines_id_].second,
+      cv_seg = ReadImageToCVMatNearest(root_folder + lines_[lines_id_][WindowInstSegDataLayer::SEG],
 					    0, 0, false);
       if (!cv_seg.data) {
-	DLOG(INFO) << "Fail to load seg: " << root_folder + lines_[lines_id_].second;
+	DLOG(INFO) << "Fail to load seg: " << root_folder + lines_[lines_id_][WindowInstSegDataLayer::SEG];
+      }
+      cv_inst = ReadImageToCVMatNearest(root_folder + lines_[lines_id_][WindowInstSegDataLayer::INST],
+					    0, 0, false);
+      if (!cv_inst.data) {
+	DLOG(INFO) << "Fail to load inst: " << root_folder + lines_[lines_id_][WindowInstSegDataLayer::INST];
       }
     }
     else if (label_type == ImageDataParameter_LabelType_IMAGE) {
-      const int label = atoi(lines_[lines_id_].second.c_str());
+      const int label = atoi(lines_[lines_id_][WindowInstSegDataLayer::SEG].c_str());
       cv::Mat seg(cv_img.rows, cv_img.cols, 
 		  CV_8UC1, cv::Scalar(label));
-      cv_seg = seg;      
+      cv_seg = seg;     
+      cv::Mat inst(cv_img.rows, cv_img.cols, 
+		  CV_8UC1, cv::Scalar(0));
+      cv_inst = inst; 
     }
     else {
       cv::Mat seg(cv_img.rows, cv_img.cols, 
 		  CV_8UC1, cv::Scalar(ignore_label));
       cv_seg = seg;
+      cv::Mat inst(cv_img.rows, cv_img.cols, 
+		  CV_8UC1, cv::Scalar(0));
+      cv_inst = inst;
+
     }
     vector<int> window = windows_[lines_id_];
     // crop window out of image and warp it
@@ -228,6 +247,9 @@ void WindowInstSegDataLayer<Dtype>::InternalThreadEntry() {
         cv::copyMakeBorder(cv_seg, cv_seg, pad_y1, pad_y2,
             pad_x1, pad_x2, cv::BORDER_CONSTANT,
             cv::Scalar(ignore_label));
+        cv::copyMakeBorder(cv_inst, cv_inst, pad_y1, pad_y2,
+            pad_x1, pad_x2, cv::BORDER_CONSTANT,
+            cv::Scalar(0));
     }
     // clip bounds
     x1 = x1 + pad_x1;
@@ -243,12 +265,25 @@ void WindowInstSegDataLayer<Dtype>::InternalThreadEntry() {
     cv::Rect roi(x1, y1, x2-x1+1, y2-y1+1);
     cv::Mat cv_cropped_img = cv_img(roi);
     cv::Mat cv_cropped_seg = cv_seg(roi);
+    cv::Mat cv_cropped_inst= cv_inst(roi);
     if (new_width > 0 && new_height > 0) {
         cv::resize(cv_cropped_img, cv_cropped_img, 
                cv::Size(new_width, new_height), 0, 0, cv::INTER_LINEAR);
         cv::resize(cv_cropped_seg, cv_cropped_seg, 
                cv::Size(new_width, new_height), 0, 0, cv::INTER_NEAREST);
+        cv::resize(cv_cropped_inst,cv_cropped_inst, 
+               cv::Size(new_width, new_height), 0, 0, cv::INTER_NEAREST);
     }
+    // masking based on inst map
+    for(int j=0; j < new_height; j++) {
+        for(int i=0; i < new_width; i++) {
+            if (cv_cropped_inst.at<uchar>(j,i) != inst_label) {
+                cv_cropped_seg.at<uchar>(j,i) = other_object_label;
+            } 
+        }
+    }
+    
+
     cv_img_seg.push_back(cv_cropped_img);
     cv_img_seg.push_back(cv_cropped_seg);
 

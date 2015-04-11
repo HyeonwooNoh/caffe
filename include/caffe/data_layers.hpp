@@ -453,7 +453,8 @@ class WindowInstSegDataLayer : public ImageDimPrefetchingDataLayer<Dtype> {
   enum WindowField {X1, Y1, X2, Y2,INST_LABEL,NUM};
   vector<vector<int> > windows_;
 
-  vector<std::pair<std::string, std::string> > lines_;
+  enum LineField {IMG, SEG, INST,FN_NUM};
+  vector<vector<std::string> > lines_;
   int lines_id_;
 };
 

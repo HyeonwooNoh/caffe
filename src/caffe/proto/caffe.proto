@@ -595,7 +595,7 @@ message ImageDataParameter {
   optional bool is_color = 11 [default = true];
   // This is the value seg for pixels or images where we don't know the label 
   optional int32 ignore_label = 15 [default = 255];
-  optional int32 other_object_label = 16 [default = 0];
+  optional int32 other_object_label = 17 [default = 0];
   enum LabelType {
     NONE = 0;
     IMAGE = 1;
