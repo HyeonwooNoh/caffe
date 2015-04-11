@@ -54,16 +54,18 @@ void WindowSegDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& botto
     if (label_type != ImageDataParameter_LabelType_NONE) {
       iss >> segfn;
     }
-    lines_.push_back(std::make_pair(imgfn, segfn));
-    
+    SEGITEMS item;
+    item.imgfn = imgfn;
+    item.segfn = segfn;
+
     int x1, y1, x2, y2;
     iss >> x1 >> y1 >> x2 >> y2;
-    vector<int> window(WindowSegDataLayer::NUM);
-    window[WindowSegDataLayer::X1] = x1;
-    window[WindowSegDataLayer::Y1] = y1;
-    window[WindowSegDataLayer::X2] = x2;
-    window[WindowSegDataLayer::Y2] = y2;
-    windows_.push_back(window);
+    item.x1 = x1;
+    item.y1 = y1;
+    item.x2 = x2;
+    item.y2 = y2;
+
+    lines_.push_back(item);
   }
 
   if (this->layer_param_.image_data_param().shuffle()) {
@@ -86,7 +88,7 @@ void WindowSegDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& botto
   }
 
   // Read an image, and use it to initialize the top blob.
-  cv::Mat cv_img = ReadImageToCVMat(root_folder + lines_[lines_id_].first,
+  cv::Mat cv_img = ReadImageToCVMat(root_folder + lines_[lines_id_].imgfn,
                                     new_height, new_width, is_color);
   const int channels = cv_img.channels();
   const int height = cv_img.rows;
@@ -137,7 +139,6 @@ void WindowSegDataLayer<Dtype>::ShuffleImages() {
   caffe::rng_t* prefetch_rng =
       static_cast<caffe::rng_t*>(prefetch_rng_->generator());
   shuffle(lines_.begin(), lines_.end(), prefetch_rng);
-  shuffle(windows_.begin(), windows_.end(), prefetch_rng);
 }
 
 // This function is used to create a thread that prefetches the data.
@@ -181,24 +182,24 @@ void WindowSegDataLayer<Dtype>::InternalThreadEntry() {
     CHECK_GT(lines_size, lines_id_);
 
     int img_row, img_col;
-    cv_img = ReadImageToCVMat(root_folder + lines_[lines_id_].first,
+    cv_img = ReadImageToCVMat(root_folder + lines_[lines_id_].imgfn,
 	  0, 0, is_color, &img_row, &img_col);
 
     top_data_dim[top_data_dim_offset]     = static_cast<Dtype>(std::min(max_height, img_row));
     top_data_dim[top_data_dim_offset + 1] = static_cast<Dtype>(std::min(max_width, img_col));
 
     if (!cv_img.data) {
-      DLOG(INFO) << "Fail to load img: " << root_folder + lines_[lines_id_].first;
+      DLOG(INFO) << "Fail to load img: " << root_folder + lines_[lines_id_].imgfn;
     }
     if (label_type == ImageDataParameter_LabelType_PIXEL) {
-      cv_seg = ReadImageToCVMatNearest(root_folder + lines_[lines_id_].second,
+      cv_seg = ReadImageToCVMatNearest(root_folder + lines_[lines_id_].segfn,
 					    0, 0, false);
       if (!cv_seg.data) {
-	DLOG(INFO) << "Fail to load seg: " << root_folder + lines_[lines_id_].second;
+	DLOG(INFO) << "Fail to load seg: " << root_folder + lines_[lines_id_].segfn;
       }
     }
     else if (label_type == ImageDataParameter_LabelType_IMAGE) {
-      const int label = atoi(lines_[lines_id_].second.c_str());
+      const int label = atoi(lines_[lines_id_].segfn.c_str());
       cv::Mat seg(cv_img.rows, cv_img.cols, 
 		  CV_8UC1, cv::Scalar(label));
       cv_seg = seg;      
@@ -208,12 +209,11 @@ void WindowSegDataLayer<Dtype>::InternalThreadEntry() {
 		  CV_8UC1, cv::Scalar(ignore_label));
       cv_seg = seg;
     }
-    vector<int> window = windows_[lines_id_];
     // crop window out of image and warp it
-    int x1 = window[WindowSegDataLayer<Dtype>::X1];
-    int y1 = window[WindowSegDataLayer<Dtype>::Y1];
-    int x2 = window[WindowSegDataLayer<Dtype>::X2];
-    int y2 = window[WindowSegDataLayer<Dtype>::Y2];
+    int x1 = lines_[lines_id_].x1;
+    int y1 = lines_[lines_id_].y1;
+    int x2 = lines_[lines_id_].x2;
+    int y2 = lines_[lines_id_].y2;
     // compute padding 
     int pad_x1 = std::max(0, -x1);
     int pad_y1 = std::max(0, -y1);
