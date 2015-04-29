@@ -85,6 +85,40 @@ class AccuracyLayer : public Layer<Dtype> {
 };
 
 /**
+ * @brief Computes the classification accuracy for k one-versus-all
+ *        classification task.
+ */
+template <typename Dtype>
+class BinaryAccuracyLayer : public Layer<Dtype> {
+ public:
+  explicit BinaryAccuracyLayer(const LayerParameter& param)
+      : Layer<Dtype>(param) {}
+  virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+  virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+
+  virtual inline LayerParameter_LayerType type() const {
+    return LayerParameter_LayerType_BIN_ACCURACY;
+  }
+
+  virtual inline int ExactNumBottomBlobs() const { return 2; }
+  virtual inline int ExactNumTopBlobs() const { return 1; }
+
+ protected:
+  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+
+  /// @brief Not implemented -- BinaryAccuracyLayer cannot be used as a loss.
+  virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
+    for (int i = 0; i < propagate_down.size(); ++i) {
+      if (propagate_down[i]) { NOT_IMPLEMENTED; }
+    }
+  }
+};
+
+/**
  * @brief Computes the segmentation accuracy for a pixel-wise one-of-many
  *        classification task.
  */
