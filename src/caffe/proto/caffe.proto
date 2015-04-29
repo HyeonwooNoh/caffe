@@ -207,7 +207,7 @@ message NetStateRule {
 // NOTE
 // Update the next available ID when you add a new LayerParameter field.
 //
-// LayerParameter next available ID: 48 (last added: red_accuracy_param)
+// LayerParameter next available ID: 49 (last added: binary_accuracy_param)
 message LayerParameter {
   repeated string bottom = 2; // the name of the bottom blobs
   repeated string top = 3; // the name of the top blobs
@@ -313,6 +313,7 @@ message LayerParameter {
 
   optional AccuracyParameter accuracy_param = 27;
   optional ArgMaxParameter argmax_param = 23;
+  optional BinaryAccuracyParameter binary_accuracy_param = 48;
   optional BNParameter bn_param = 45;
   optional ConcatParameter concat_param = 9;
   optional ContrastiveLossParameter contrastive_loss_param = 40;
@@ -405,6 +406,16 @@ message ArgMaxParameter {
   optional uint32 top_k = 2 [default = 1];
 }
 
+// Message that stores parameters used by BN (Batch Normalization)  layer
+message BinaryAccuracyParameter {
+  enum AccuracyMode {
+    Accuracy = 0;
+    Precision = 1;
+    Recall = 2;
+    F_measure = 3; 
+  }
+  optional AccuracyMode accuracy_mode = 1 [default = Accuracy];
+}
 // Message that stores parameters used by BN (Batch Normalization)  layer
 message BNParameter {
   enum BNMode {
