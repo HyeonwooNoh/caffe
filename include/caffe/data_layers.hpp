@@ -451,6 +451,7 @@ class WindowClsDataLayer : public ImageDimPrefetchingDataLayer<Dtype> {
  protected:
   Blob<Dtype> seg_label_buffer_;
   Blob<Dtype> transformed_label_;
+  Blob<Dtype> computed_label_;
 
   shared_ptr<Caffe::RNG> prefetch_rng_;
 

@@ -119,6 +119,7 @@ void WindowClsDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& botto
   // label
   top[1]->Reshape(batch_size, label_dim_, 1, 1);
   this->prefetch_label_.Reshape(batch_size, label_dim_, 1, 1);
+  this->computed_label_.Reshape(1, label_dim_, 1, 1);
 
   // image dimensions, for each image, stores (img_height, img_width)
   top[2]->Reshape(batch_size, 1, 1, 2);
@@ -269,6 +270,22 @@ void WindowClsDataLayer<Dtype>::InternalThreadEntry() {
 	 &(this->transformed_data_), &(this->transformed_label_),
 	 ignore_label);
     trans_time += timer.MicroSeconds();
+
+    // compute label
+    offset = this->prefetch_label_.offset(item_id);
+    this->computed_label_.set_cpu_data(top_label + offset);
+
+    const Dtype * one_seg_data = this->transformed_label_.cpu_data();
+    Dtype * one_label_data = this->computed_label_.mutable_cpu_data();
+    int pixel_cnt = this->transformed_label_.count();
+    caffe_set(label_dim_, Dtype(0), one_label_data);
+    for (int i = 0; i < pixel_cnt; i++) {
+      int pixel_label = one_seg_data[i];
+      if (pixel_label != 0 && pixel_label != 255) {
+        CHECK_LT(pixel_label-1, label_dim_);
+        one_label_data[pixel_label-1] = 1;
+      }
+    }
 
     // go to the next std::vector<int>::iterator iter;
     lines_id_++;
