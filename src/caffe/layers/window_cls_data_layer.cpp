@@ -104,6 +104,7 @@ void WindowClsDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& botto
     this->transformed_data_.Reshape(1, channels, crop_size, crop_size);
 
     // transformed label
+    this->seg_label_buffer_.Reshape(batch_size, 1, crop_size, crop_size);
     this->transformed_label_.Reshape(1, 1, crop_size, crop_size);  
    
   } else {
@@ -112,6 +113,7 @@ void WindowClsDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& botto
     this->transformed_data_.Reshape(1, channels, height, width);
     
     // transformed label
+    this->seg_label_buffer_.Reshape(batch_size, 1, height, width);
     this->transformed_label_.Reshape(1, 1, height, width);     
   }
   // label
@@ -156,6 +158,7 @@ void WindowClsDataLayer<Dtype>::InternalThreadEntry() {
   Dtype* top_data     = this->prefetch_data_.mutable_cpu_data();
   Dtype* top_label    = this->prefetch_label_.mutable_cpu_data(); 
   Dtype* top_data_dim = this->prefetch_data_dim_.mutable_cpu_data();
+  Dtype* seg_label    = this->seg_label_buffer_.mutable_cpu_data();
 
   const int max_height = this->prefetch_data_.height();
   const int max_width  = this->prefetch_data_.width();
@@ -259,8 +262,8 @@ void WindowClsDataLayer<Dtype>::InternalThreadEntry() {
     offset = this->prefetch_data_.offset(item_id);
     this->transformed_data_.set_cpu_data(top_data + offset);
 
-    offset = this->prefetch_label_.offset(item_id);
-    this->transformed_label_.set_cpu_data(top_label + offset);
+    offset = this->seg_label_buffer_.offset(item_id);
+    this->transformed_label_.set_cpu_data(seg_label + offset);
 
     this->data_transformer_.TransformImgAndSeg(cv_img_seg, 
 	 &(this->transformed_data_), &(this->transformed_label_),
