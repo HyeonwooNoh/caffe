@@ -207,7 +207,7 @@ message NetStateRule {
 // NOTE
 // Update the next available ID when you add a new LayerParameter field.
 //
-// LayerParameter next available ID: 49 (last added: binary_accuracy_param)
+// LayerParameter next available ID: 50 (last added: window_cls_data_param)
 message LayerParameter {
   repeated string bottom = 2; // the name of the bottom blobs
   repeated string top = 3; // the name of the top blobs
@@ -345,6 +345,7 @@ message LayerParameter {
   optional TanHParameter tanh_param = 37;
   optional ThresholdParameter threshold_param = 25;
   optional UnpoolingParameter unpooling_param = 44;
+  optional WindowClsDataParameter window_cls_data_param = 49;
   optional WindowDataParameter window_data_param = 20;
 
   // Parameters for data pre-processing.
@@ -806,6 +807,10 @@ message UnpoolingParameter {
   optional Engine engine = 11 [default = DEFAULT];
 }
 
+// Message that stores parameters used by WindowClsDataLayer
+message WindowClsDataParameter { 
+  optional uint32 label_dim = 1 [default = 1];
+}
 
 // Message that stores parameters used by WindowDataLayer
 message WindowDataParameter {
