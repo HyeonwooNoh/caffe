@@ -40,6 +40,8 @@ void WindowClsDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& botto
       (new_height > 0 && new_width > 0)) << "Current implementation requires "
       "new_height and new_width to be set at the same time.";
 
+  label_dim_ = this->layer_param_.window_cls_data_param().label_dim();
+
   // Read the file with filenames and labels
   const string& source = this->layer_param_.image_data_param().source();
   LOG(INFO) << "Opening file " << source;

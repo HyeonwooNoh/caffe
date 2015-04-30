@@ -461,6 +461,7 @@ class WindowClsDataLayer : public ImageDimPrefetchingDataLayer<Dtype> {
 
   vector<SEGITEMS> lines_;
   int lines_id_;
+  int label_dim_;
 };
 
 template <typename Dtype>
