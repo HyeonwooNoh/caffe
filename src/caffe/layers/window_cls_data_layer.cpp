@@ -103,21 +103,20 @@ void WindowClsDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& botto
     this->prefetch_data_.Reshape(batch_size, channels, crop_size, crop_size);
     this->transformed_data_.Reshape(1, channels, crop_size, crop_size);
 
-    //label
-    top[1]->Reshape(batch_size, 1, crop_size, crop_size);
-    this->prefetch_label_.Reshape(batch_size, 1, crop_size, crop_size);
-    this->transformed_label_.Reshape(1, 1, crop_size, crop_size);
-     
+    // transformed label
+    this->transformed_label_.Reshape(1, 1, crop_size, crop_size);  
+   
   } else {
     top[0]->Reshape(batch_size, channels, height, width);
     this->prefetch_data_.Reshape(batch_size, channels, height, width);
     this->transformed_data_.Reshape(1, channels, height, width);
-
-    //label
-    top[1]->Reshape(batch_size, 1, height, width);
-    this->prefetch_label_.Reshape(batch_size, 1, height, width);
+    
+    // transformed label
     this->transformed_label_.Reshape(1, 1, height, width);     
   }
+  // label
+  top[1]->Reshape(batch_size, label_dim_, 1, 1);
+  this->prefetch_label_.Reshape(batch_size, label_dim_, 1, 1);
 
   // image dimensions, for each image, stores (img_height, img_width)
   top[2]->Reshape(batch_size, 1, 1, 2);
