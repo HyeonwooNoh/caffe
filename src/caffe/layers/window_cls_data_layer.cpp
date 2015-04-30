@@ -20,12 +20,12 @@
 namespace caffe {
 
 template <typename Dtype>
-WindowSegDataLayer<Dtype>::~WindowSegDataLayer<Dtype>() {
+WindowClsDataLayer<Dtype>::~WindowClsDataLayer<Dtype>() {
   this->JoinPrefetchThread();
 }
 
 template <typename Dtype>
-void WindowSegDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
+void WindowClsDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
   const int new_height = this->layer_param_.image_data_param().new_height();
   const int new_width  = this->layer_param_.image_data_param().new_width();
@@ -35,7 +35,7 @@ void WindowSegDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& botto
 
   TransformationParameter transform_param = this->layer_param_.transform_param();
   CHECK(transform_param.has_mean_file() == false) << 
-         "WindowSegDataLayer does not support mean file";
+         "WindowClsDataLayer does not support mean file";
   CHECK((new_height == 0 && new_width == 0) ||
       (new_height > 0 && new_width > 0)) << "Current implementation requires "
       "new_height and new_width to be set at the same time.";
@@ -135,7 +135,7 @@ void WindowSegDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& botto
 }
 
 template <typename Dtype>
-void WindowSegDataLayer<Dtype>::ShuffleImages() {
+void WindowClsDataLayer<Dtype>::ShuffleImages() {
   caffe::rng_t* prefetch_rng =
       static_cast<caffe::rng_t*>(prefetch_rng_->generator());
   shuffle(lines_.begin(), lines_.end(), prefetch_rng);
@@ -143,7 +143,7 @@ void WindowSegDataLayer<Dtype>::ShuffleImages() {
 
 // This function is used to create a thread that prefetches the data.
 template <typename Dtype>
-void WindowSegDataLayer<Dtype>::InternalThreadEntry() {
+void WindowClsDataLayer<Dtype>::InternalThreadEntry() {
   CPUTimer batch_timer;
   batch_timer.Start();
   double read_time = 0;
@@ -283,6 +283,6 @@ void WindowSegDataLayer<Dtype>::InternalThreadEntry() {
   DLOG(INFO) << "Transform time: " << trans_time / 1000 << " ms.";
 }
 
-INSTANTIATE_CLASS(WindowSegDataLayer);
-REGISTER_LAYER_CLASS(WINDOW_SEG_DATA, WindowSegDataLayer);
+INSTANTIATE_CLASS(WindowClsDataLayer);
+REGISTER_LAYER_CLASS(WINDOW_CLS_DATA, WindowClsDataLayer);
 }  // namespace caffe
