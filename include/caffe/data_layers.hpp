@@ -429,6 +429,41 @@ class WindowSegDataLayer : public ImageDimPrefetchingDataLayer<Dtype> {
 };
 
 template <typename Dtype>
+class WindowClsDataLayer : public ImageDimPrefetchingDataLayer<Dtype> {
+ public:
+  explicit WindowClsDataLayer(const LayerParameter& param)
+    : ImageDimPrefetchingDataLayer<Dtype>(param) {}
+  virtual ~WindowClsDataLayer();
+  virtual void DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+
+  virtual inline LayerParameter_LayerType type() const {
+    return LayerParameter_LayerType_IMAGE_DATA;
+  }
+  virtual inline int ExactNumBottomBlobs() const { return 0; }
+  virtual inline int ExactNumTopBlobs() const { return 3; }
+  virtual inline bool AutoTopBlobs() const { return true; }
+
+ protected:
+  virtual void ShuffleImages();
+  virtual void InternalThreadEntry();
+
+ protected:
+  Blob<Dtype> transformed_label_;
+
+  shared_ptr<Caffe::RNG> prefetch_rng_;
+
+  typedef struct SegItems {
+    std::string imgfn;
+    std::string segfn;
+    int x1, y1, x2, y2;
+  } SEGITEMS;
+
+  vector<SEGITEMS> lines_;
+  int lines_id_;
+};
+
+template <typename Dtype>
 class WindowInstSegDataLayer : public ImageDimPrefetchingDataLayer<Dtype> {
  public:
   explicit WindowInstSegDataLayer(const LayerParameter& param)
