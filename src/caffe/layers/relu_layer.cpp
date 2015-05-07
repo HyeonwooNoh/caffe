@@ -21,10 +21,22 @@ void ReLULayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   const Dtype* bottom_data = bottom[0]->cpu_data();
   Dtype* top_data = top[0]->mutable_cpu_data();
   const int count = bottom[0]->count();
+  // We'll output the mask to top[1] if it's of size >1.
+  const bool use_top_mask = top.size() > 1;
+  Dtype* top_mask = NULL;
   Dtype negative_slope = this->layer_param_.relu_param().negative_slope();
+
+  if (use_top_mask) {
+    top_mask = top[1]->mutable_cpu_data();
+    caffe_set(count, Dtype(0), top_mask);
+  }
+
   for (int i = 0; i < count; ++i) {
     top_data[i] = std::max(bottom_data[i], Dtype(0))
         + negative_slope * std::min(bottom_data[i], Dtype(0));
+    if (use_top_mask) {
+      top_mask = (bottom_data[i] > 0);
+    }
   }
 }
 
