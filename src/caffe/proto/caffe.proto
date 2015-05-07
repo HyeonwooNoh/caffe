@@ -228,7 +228,7 @@ message LayerParameter {
   // line above the enum. Update the next available ID when you add a new
   // LayerType.
   //
-  // LayerType next available ID: 52 (last added: WINDOW_SEG_BINARY)
+  // LayerType next available ID: 53 (last added: SELECT_SEG_BINARY)
   enum LayerType {
     // "NONE" layer type is 0th enum element so that we don't cause confusion
     // by defaulting to an existent LayerType (instead, should usually error if
@@ -270,6 +270,7 @@ message LayerParameter {
     RED_SOFTMAX_LOSS = 44;
     RED_ACCURACY = 45;
     RELU = 18;
+    SELECT_SEG_BINARY = 52;
     SIGMOID = 19;
     SIGMOID_CROSS_ENTROPY_LOSS = 27;
     SILENCE = 36;
