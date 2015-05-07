@@ -485,6 +485,7 @@ class SelectSegBinaryLayer : public ImageDimPrefetchingDataLayer<Dtype> {
 
  protected:
   Blob<Dtype> transformed_label_;
+  Blob<Dtype> class_label_;
 
   shared_ptr<Caffe::RNG> prefetch_rng_;
 
