@@ -15,21 +15,41 @@ __global__ void ReLUForward(const int n, const Dtype* in, Dtype* out,
 }
 
 template <typename Dtype>
+__global__ void ReLUForward_With_Mask(const int n, const Dtype* in, Dtype* out, Dtype* out_mask,
+    Dtype negative_slope) {
+  CUDA_KERNEL_LOOP(index, n) {
+    out[index] = in[index] > 0 ? in[index] : in[index] * negative_slope;
+    out_mask[index] = in[index] > 0 ? 1 : 0;
+  }
+}
+
+template <typename Dtype>
 void ReLULayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
     const vector<Blob<Dtype>*>& top) {
   const Dtype* bottom_data = bottom[0]->gpu_data();
   Dtype* top_data = top[0]->mutable_gpu_data();
   const int count = bottom[0]->count();
+  const bool use_top_mask = top.size() > 1;
+  Dtype* top_mask = NULL;
   Dtype negative_slope = this->layer_param_.relu_param().negative_slope();
-  // NOLINT_NEXT_LINE(whitespace/operators)
-  ReLUForward<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
-      count, bottom_data, top_data, negative_slope);
-  CUDA_POST_KERNEL_CHECK;
-  // << " count: " << count << " bottom_data: "
-  //     << (unsigned long)bottom_data
-  //     << " top_data: " << (unsigned long)top_data
-  //     << " blocks: " << CAFFE_GET_BLOCKS(count)
-  //     << " threads: " << CAFFE_CUDA_NUM_THREADS;
+
+  if (use_top_mask) {
+    top_mask = top[1]->mutable_gpu_data();
+    ReLUForward_With_Mask<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
+        count, bottom_data, top_data, top_mask, negative_slope);
+    CUDA_POST_KERNEL_CHECK;
+  }
+  else {
+    // NOLINT_NEXT_LINE(whitespace/operators)
+    ReLUForward<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
+        count, bottom_data, top_data, negative_slope);
+    CUDA_POST_KERNEL_CHECK;
+    // << " count: " << count << " bottom_data: "
+    //     << (unsigned long)bottom_data
+    //     << " top_data: " << (unsigned long)top_data
+    //     << " blocks: " << CAFFE_GET_BLOCKS(count)
+    //     << " threads: " << CAFFE_CUDA_NUM_THREADS;
+  }
 }
 
 template <typename Dtype>

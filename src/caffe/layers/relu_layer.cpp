@@ -35,7 +35,7 @@ void ReLULayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
     top_data[i] = std::max(bottom_data[i], Dtype(0))
         + negative_slope * std::min(bottom_data[i], Dtype(0));
     if (use_top_mask) {
-      top_mask = (bottom_data[i] > 0);
+      top_mask = (bottom_data[i] > 0 ? 1 : 0);
     }
   }
 }
