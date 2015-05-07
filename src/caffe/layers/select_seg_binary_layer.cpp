@@ -128,7 +128,7 @@ void SelectSegBinaryLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bot
   // image dimensions, for each image, stores (img_height, img_width)
   top[2]->Reshape(batch_size, label_dim_, 1, 1);
   this->prefetch_data_dim_.Reshape(batch_size, label_dim_, 1, 1);
-  this->class_label_.Reshape(batch_size, label_dim_, 1, 1);
+  this->class_label_.Reshape(1, label_dim_, 1, 1);
 
   LOG(INFO) << "output data size: " << top[0]->num() << ","
 	    << top[0]->channels() << "," << top[0]->height() << ","
