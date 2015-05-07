@@ -163,7 +163,7 @@ void SelectSegBinaryLayer<Dtype>::InternalThreadEntry() {
 
   Dtype* top_data     = this->prefetch_data_.mutable_cpu_data();
   Dtype* top_label    = this->prefetch_label_.mutable_cpu_data(); 
-  Dtype* top_data_dim = this->prefetch_data_dim_.mutable_cpu_data();
+  Dtype* top_cls_label = this->prefetch_data_dim_.mutable_cpu_data();
 
   const int max_height = this->prefetch_data_.height();
   const int max_width  = this->prefetch_data_.width();
@@ -178,11 +178,8 @@ void SelectSegBinaryLayer<Dtype>::InternalThreadEntry() {
   string root_folder   = image_data_param.root_folder();
 
   const int lines_size = lines_.size();
-  int top_data_dim_offset;
 
   for (int item_id = 0; item_id < batch_size; ++item_id) {
-    top_data_dim_offset = this->prefetch_data_dim_.offset(item_id);
-
     std::vector<cv::Mat> cv_img_seg;
     cv::Mat cv_img, cv_seg;
 
@@ -193,9 +190,6 @@ void SelectSegBinaryLayer<Dtype>::InternalThreadEntry() {
     int img_row, img_col;
     cv_img = ReadImageToCVMat(root_folder + lines_[lines_id_].imgfn,
 	  0, 0, is_color, &img_row, &img_col);
-
-    top_data_dim[top_data_dim_offset]     = static_cast<Dtype>(std::min(max_height, img_row));
-    top_data_dim[top_data_dim_offset + 1] = static_cast<Dtype>(std::min(max_width, img_col));
 
     if (!cv_img.data) {
       DLOG(INFO) << "Fail to load img: " << root_folder + lines_[lines_id_].imgfn;
@@ -256,15 +250,7 @@ void SelectSegBinaryLayer<Dtype>::InternalThreadEntry() {
         cv::resize(cv_cropped_seg, cv_cropped_seg, 
                cv::Size(new_width, new_height), 0, 0, cv::INTER_NEAREST);
     }
-    // substitute all foreground objects with 1
-    for (int xx = 0; xx < new_width; ++xx) {
-        for (int yy=0; yy < new_height; ++yy) {
-	    if (cv_cropped_seg.at<uchar>(yy,xx)>0 && cv_cropped_seg.at<uchar>(yy,xx) < 255){
-	         cv_cropped_seg.at<uchar>(yy,xx) = 1;  
-	    } 
-   
-        }
-    } 
+     
     cv_img_seg.push_back(cv_cropped_img);
     cv_img_seg.push_back(cv_cropped_seg);
 
@@ -283,6 +269,25 @@ void SelectSegBinaryLayer<Dtype>::InternalThreadEntry() {
 	 &(this->transformed_data_), &(this->transformed_label_),
 	 ignore_label);
     trans_time += timer.MicroSeconds();
+
+    // class label
+    offset = this->prefetch_data_dim_.offset(item_id);
+    this->class_label_.set_cpu_data(top_cls_label + offset);
+    Dtype * cls_label_data = this->class_label_.mutable_cpu_data();
+    for (int i = 0; i < label_dim_; i++) {
+      cls_label_data[i] = lines_[lines_id_].cls_label[i];
+    }
+
+    // modify seg label
+    Dtype * seg_label_data = this->transformed_label_.mutable_cpu_data();
+    int pixel_count = this->transformed_label_.count();
+    for (int i = 0; i < pixel_count; i++) {
+      int seg_label = seg_label_data[i];
+      if (seg_label != 0 && seg_label != ignore_label) {
+        CHECK_LT(seg_label-1, label_dim_);
+        seg_label_data[i] = cls_label_data[seg_label-1];
+      }
+    }
 
     // go to the next std::vector<int>::iterator iter;
     lines_id_++;
