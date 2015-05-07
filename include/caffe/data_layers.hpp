@@ -464,11 +464,11 @@ class WindowSegBinaryLayer : public ImageDimPrefetchingDataLayer<Dtype> {
 };
 
 template <typename Dtype>
-class WindowSegBinaryLayer : public ImageDimPrefetchingDataLayer<Dtype> {
+class SelectSegBinaryLayer : public ImageDimPrefetchingDataLayer<Dtype> {
  public:
-  explicit WindowSegBinaryLayer(const LayerParameter& param)
+  explicit SelectSegBinaryLayer(const LayerParameter& param)
     : ImageDimPrefetchingDataLayer<Dtype>(param) {}
-  virtual ~WindowSegBinaryLayer();
+  virtual ~SelectSegBinaryLayer();
   virtual void DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top);
 

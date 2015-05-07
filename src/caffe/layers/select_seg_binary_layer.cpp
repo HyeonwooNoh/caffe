@@ -20,12 +20,12 @@
 namespace caffe {
 
 template <typename Dtype>
-WindowSegBinaryLayer<Dtype>::~WindowSegBinaryLayer<Dtype>() {
+SelectSegBinaryLayer<Dtype>::~SelectSegBinaryLayer<Dtype>() {
   this->JoinPrefetchThread();
 }
 
 template <typename Dtype>
-void WindowSegBinaryLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
+void SelectSegBinaryLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
   const int new_height = this->layer_param_.image_data_param().new_height();
   const int new_width  = this->layer_param_.image_data_param().new_width();
@@ -35,7 +35,7 @@ void WindowSegBinaryLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bot
 
   TransformationParameter transform_param = this->layer_param_.transform_param();
   CHECK(transform_param.has_mean_file() == false) << 
-         "WindowSegBinaryLayer does not support mean file";
+         "SelectSegBinaryLayer does not support mean file";
   CHECK((new_height == 0 && new_width == 0) ||
       (new_height > 0 && new_width > 0)) << "Current implementation requires "
       "new_height and new_width to be set at the same time.";
@@ -135,7 +135,7 @@ void WindowSegBinaryLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bot
 }
 
 template <typename Dtype>
-void WindowSegBinaryLayer<Dtype>::ShuffleImages() {
+void SelectSegBinaryLayer<Dtype>::ShuffleImages() {
   caffe::rng_t* prefetch_rng =
       static_cast<caffe::rng_t*>(prefetch_rng_->generator());
   shuffle(lines_.begin(), lines_.end(), prefetch_rng);
@@ -143,7 +143,7 @@ void WindowSegBinaryLayer<Dtype>::ShuffleImages() {
 
 // This function is used to create a thread that prefetches the data.
 template <typename Dtype>
-void WindowSegBinaryLayer<Dtype>::InternalThreadEntry() {
+void SelectSegBinaryLayer<Dtype>::InternalThreadEntry() {
   CPUTimer batch_timer;
   batch_timer.Start();
   double read_time = 0;
@@ -292,6 +292,6 @@ void WindowSegBinaryLayer<Dtype>::InternalThreadEntry() {
   DLOG(INFO) << "Transform time: " << trans_time / 1000 << " ms.";
 }
 
-INSTANTIATE_CLASS(WindowSegBinaryLayer);
-REGISTER_LAYER_CLASS(WINDOW_SEG_BINARY, WindowSegBinaryLayer);
+INSTANTIATE_CLASS(SelectSegBinaryLayer);
+REGISTER_LAYER_CLASS(SELECT_SEG_BINARY, SelectSegBinaryLayer);
 }  // namespace caffe
