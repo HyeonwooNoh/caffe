@@ -492,10 +492,12 @@ class SelectSegBinaryLayer : public ImageDimPrefetchingDataLayer<Dtype> {
     std::string imgfn;
     std::string segfn;
     int x1, y1, x2, y2;
+    vector<int> cls_label;
   } SEGITEMS;
 
   vector<SEGITEMS> lines_;
   int lines_id_;
+  int label_dim_;
 };
 
 

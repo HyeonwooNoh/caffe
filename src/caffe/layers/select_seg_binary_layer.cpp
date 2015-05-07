@@ -40,6 +40,8 @@ void SelectSegBinaryLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bot
       (new_height > 0 && new_width > 0)) << "Current implementation requires "
       "new_height and new_width to be set at the same time.";
 
+  label_dim_ = this->layer_param_.window_cls_data_param().label_dim();
+
   // Read the file with filenames and labels
   const string& source = this->layer_param_.image_data_param().source();
   LOG(INFO) << "Opening file " << source;
@@ -64,6 +66,12 @@ void SelectSegBinaryLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bot
     item.y1 = y1;
     item.x2 = x2;
     item.y2 = y2;
+
+    for (int i = 0; i < label_dim_; i++) {
+      int l;
+      iss >> l;
+      item.cls_label.push_back(l);
+    }
 
     lines_.push_back(item);
   }
