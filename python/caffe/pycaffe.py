@@ -111,8 +111,6 @@ def _Net_backward(self, diffs=None, start=None, end=None, **kwargs):
         outputs = set(self.inputs + diffs)
 
     if kwargs:
-        if set(kwargs.keys()) != set(self.outputs):
-            raise Exception('Top diff arguments do not match net outputs.')
         # Set top diffs according to defined shapes and make arrays single and
         # C-contiguous as Caffe expects.
         for top, diff in kwargs.iteritems():
