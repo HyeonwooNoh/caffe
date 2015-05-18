@@ -207,7 +207,7 @@ message NetStateRule {
 // NOTE
 // Update the next available ID when you add a new LayerParameter field.
 //
-// LayerParameter next available ID: 50 (last added: window_cls_data_param)
+// LayerParameter next available ID: 51 (last added: select_seg_binary_param)
 message LayerParameter {
   repeated string bottom = 2; // the name of the bottom blobs
   repeated string top = 3; // the name of the top blobs
@@ -341,6 +341,7 @@ message LayerParameter {
   optional RedSoftmaxWithLossParameter red_softmax_loss_param = 46;
   optional RedAccuracyParameter red_accuracy_param = 47;
   optional ReLUParameter relu_param = 30;
+  optional SelectSegBinaryParameter select_seg_binary_param = 50;
   optional SigmoidParameter sigmoid_param = 38;
   optional SoftmaxParameter softmax_param = 39;
   optional SliceParameter slice_param = 31;
@@ -384,6 +385,10 @@ message TransformationParameter {
   // or can be repeated the same number of times as channels
   // (would subtract them from the corresponding channel)
   repeated float mean_value = 5;
+}
+
+message SelectSegBinaryParameter {
+  optional uint32 cls_label_base = 1 [default = 0];
 }
 
 // Message that stores parameters shared by loss layers

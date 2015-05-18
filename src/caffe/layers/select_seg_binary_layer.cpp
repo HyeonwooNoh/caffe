@@ -281,11 +281,16 @@ void SelectSegBinaryLayer<Dtype>::InternalThreadEntry() {
     // modify seg label
     Dtype * seg_label_data = this->transformed_label_.mutable_cpu_data();
     int pixel_count = this->transformed_label_.count();
+    const int cls_label_base = this->layer_param_.select_seg_binary_param().cls_label_base();
     for (int i = 0; i < pixel_count; i++) {
       int seg_label = seg_label_data[i];
       if (seg_label != 0 && seg_label != ignore_label) {
-        CHECK_LT(seg_label-1, label_dim_);
-        seg_label_data[i] = cls_label_data[seg_label-1];
+        if (cls_label_base < seg_label && seg_label-1 < (label_dim_+cls_label_base)) {
+          seg_label_data[i] = cls_label_data[seg_label-cls_label_base-1];
+        }
+        else {
+          seg_label_data[i] = 0;
+        }
       }
     }
 
