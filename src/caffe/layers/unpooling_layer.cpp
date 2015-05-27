@@ -159,8 +159,8 @@ void UnpoolingLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
             int pool_size = (hend - hstart) * (wend - wstart);
             hstart = max(hstart, 0);
             wstart = max(wstart, 0);
-            hend = min(hend, height_);
-            wend = min(wend, width_);
+            hend = min(hend, unpooled_height_);
+            wend = min(wend, unpooled_width_);
             for (int h = hstart; h < hend; ++h) {
               for (int w = wstart; w < wend; ++w) {
                 top_data[h * unpooled_width_ + w] +=
