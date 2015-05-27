@@ -225,9 +225,9 @@ void UnpoolingLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
       }
     }
     break;
-  case UnpoolingParameter_UnpoolMethod_MAX:
-    for (int i = 0; i < top_count; ++i) {
-      top_data[i] = 0;
+  case UnpoolingParameter_UnpoolMethod_AVE:
+    for (int i = 0; i < bottom[0]->count(); ++i) {
+      bottom_diff[i] = 0;
     }
     // The main loop
     for (int n = 0; n < bottom[0]->num(); ++n) {
