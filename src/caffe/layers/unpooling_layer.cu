@@ -95,7 +95,7 @@ void UnpoolingLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
   case UnpoolingParameter_UnpoolMethod_AVE:
     // NOLINT_NEXT_LINE(whitespace/operators)
     AveUnpoolForward<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
-        count, bottom_data, bottom[0]->num(), channels_,
+        top[0]->count(), bottom_data, bottom[0]->num(), channels_,
         unpooled_height_, unpooled_width_, height_, width_, kernel_h_,
         kernel_w_, stride_h_, stride_w_, pad_h_, pad_w_, top_data);
     break;
@@ -195,8 +195,8 @@ void UnpoolingLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
     break;
   case UnpoolingParameter_UnpoolMethod_AVE:
     // NOLINT_NEXT_LINE(whitespace/operators)
-    AveUnoolBackward<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
-        count, top_diff, top[0]->num(), channels_,
+    AveUnpoolBackward<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
+        bottom[0]->count(), top_diff, top[0]->num(), channels_,
         unpooled_height_, unpooled_width_, height_, width_, kernel_h_,
         kernel_w_, stride_h_, stride_w_, pad_h_, pad_w_, bottom_diff);
     break;
