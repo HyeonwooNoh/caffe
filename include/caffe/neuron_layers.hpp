@@ -219,9 +219,9 @@ class DropoutLayer : public NeuronLayer<Dtype> {
  * Dropout in channel direction
  */
 template <typename Dtype>
-class DropoutLayer : public NeuronLayer<Dtype> {
+class DropoutChannelLayer : public NeuronLayer<Dtype> {
  public:
-  explicit DropoutLayer(const LayerParameter& param)
+  explicit DropoutChannelLayer(const LayerParameter& param)
       : NeuronLayer<Dtype>(param) {}
   virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top);

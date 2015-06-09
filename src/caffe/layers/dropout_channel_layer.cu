@@ -12,7 +12,7 @@ namespace caffe {
 
 
 template <typename Dtype>
-__global__ void DropoutForward(const int n, const Dtype* in,
+__global__ void DropoutChannelForward(const int n, const Dtype* in,
     const unsigned int* mask, const unsigned int threshold, const float scale,
     Dtype* out) {
   CUDA_KERNEL_LOOP(index, n) {
@@ -21,7 +21,7 @@ __global__ void DropoutForward(const int n, const Dtype* in,
 }
 
 template <typename Dtype>
-void DropoutLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
+void DropoutChannelLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
     const vector<Blob<Dtype>*>& top) {
   const Dtype* bottom_data = bottom[0]->gpu_data();
   Dtype* top_data = top[0]->mutable_gpu_data();
@@ -32,7 +32,7 @@ void DropoutLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
     caffe_gpu_rng_uniform(count, mask);
     // set thresholds
     // NOLINT_NEXT_LINE(whitespace/operators)
-    DropoutForward<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
+    DropoutChannelForward<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
         count, bottom_data, mask, uint_thres_, scale_, top_data);
     CUDA_POST_KERNEL_CHECK;
   } else {
@@ -41,7 +41,7 @@ void DropoutLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
 }
 
 template <typename Dtype>
-__global__ void DropoutBackward(const int n, const Dtype* in_diff,
+__global__ void DropoutChannelBackward(const int n, const Dtype* in_diff,
     const unsigned int* mask, const unsigned int threshold, const float scale,
     Dtype* out_diff) {
   CUDA_KERNEL_LOOP(index, n) {
@@ -50,7 +50,7 @@ __global__ void DropoutBackward(const int n, const Dtype* in_diff,
 }
 
 template <typename Dtype>
-void DropoutLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
+void DropoutChannelLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
     const vector<bool>& propagate_down,
     const vector<Blob<Dtype>*>& bottom) {
   if (propagate_down[0]) {
@@ -61,7 +61,7 @@ void DropoutLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
           static_cast<const unsigned int*>(rand_vec_.gpu_data());
       const int count = bottom[0]->count();
       // NOLINT_NEXT_LINE(whitespace/operators)
-      DropoutBackward<Dtype><<<CAFFE_GET_BLOCKS(count),
+      DropoutChannelBackward<Dtype><<<CAFFE_GET_BLOCKS(count),
         CAFFE_CUDA_NUM_THREADS>>>(
           count, top_diff, mask, uint_thres_, scale_, bottom_diff);
       CUDA_POST_KERNEL_CHECK;
@@ -71,7 +71,7 @@ void DropoutLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
   }
 }
 
-INSTANTIATE_LAYER_GPU_FUNCS(DropoutLayer);
+INSTANTIATE_LAYER_GPU_FUNCS(DropoutChannelLayer);
 
 
 }  // namespace caffe
