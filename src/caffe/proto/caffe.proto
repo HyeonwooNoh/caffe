@@ -228,7 +228,7 @@ message LayerParameter {
   // line above the enum. Update the next available ID when you add a new
   // LayerType.
   //
-  // LayerType next available ID: 53 (last added: SELECT_SEG_BINARY)
+  // LayerType next available ID: 54 (last added: DROPOUT_CHANNEL)
   enum LayerType {
     // "NONE" layer type is 0th enum element so that we don't cause confusion
     // by defaulting to an existent LayerType (instead, should usually error if
@@ -247,6 +247,7 @@ message LayerParameter {
     DATA = 5;
     DECONVOLUTION = 39;
     DROPOUT = 6;
+    DROPOUT_CHANNEL = 53;
     DUMMY_DATA = 32;
     EUCLIDEAN_LOSS = 7;
     ELTWISE = 25;
