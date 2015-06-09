@@ -27,9 +27,19 @@ void DropoutChannelLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
   Dtype* top_data = top[0]->mutable_gpu_data();
   const int count = bottom[0]->count();
   if (Caffe::phase() == Caffe::TRAIN) {
-    unsigned int* mask =
+    const unsigned int* const_vec = 
+        static_cast<unsigned int*>(rand_vec_.gpu_data());
+    unsigned int* vec = 
         static_cast<unsigned int*>(rand_vec_.mutable_gpu_data());
-    caffe_gpu_rng_uniform(count, mask);
+    unsigned int* mask =
+        static_cast<unsigned int*>(rand_mat_.mutable_gpu_data());
+
+    caffe_gpu_rng_uniform(count, vec);
+
+    caffe_gpu_gemm<unsigned int>(CblasNoTrans, CblasNoTrans, static_cast<unsigned int>(1),
+                                 const_vec, spatial_num_multiplier_.gpu_data(),
+                                 static_cast<unsigned int>(0), mask);
+
     // set thresholds
     // NOLINT_NEXT_LINE(whitespace/operators)
     DropoutChannelForward<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
@@ -58,7 +68,7 @@ void DropoutChannelLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
     Dtype* bottom_diff = bottom[0]->mutable_gpu_diff();
     if (Caffe::phase() == Caffe::TRAIN) {
       const unsigned int* mask =
-          static_cast<const unsigned int*>(rand_vec_.gpu_data());
+          static_cast<const unsigned int*>(rand_mat_.gpu_data());
       const int count = bottom[0]->count();
       // NOLINT_NEXT_LINE(whitespace/operators)
       DropoutChannelBackward<Dtype><<<CAFFE_GET_BLOCKS(count),
