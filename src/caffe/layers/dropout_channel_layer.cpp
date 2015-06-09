@@ -26,7 +26,11 @@ void DropoutChannelLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
   NeuronLayer<Dtype>::Reshape(bottom, top);
   // Set up the cache for random number generation
+  rand_mat_.Reshape(bottom[0]->num(), bottom[0]->channels(),
+      bottom[0]->height(), bottom[0]->width());
   rand_vec_.Reshape(bottom[0]->num(), bottom[0]->channels(),
+      1, 1);
+  spatial_sum_multiplier_.Reshape(1, 1,
       bottom[0]->height(), bottom[0]->width());
 }
 

@@ -242,8 +242,11 @@ class DropoutChannelLayer : public NeuronLayer<Dtype> {
   virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
       const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
 
-  /// when divided by UINT_MAX, the randomly generated values @f$u\sim U(0,1)@f$
-  Blob<unsigned int> rand_vec_;
+  Blob<unsigned int> rand_mat_; // (N, C, H, W) 
+  Blob<unsigned int> rand_vec_; // (N, C, 1, 1)
+
+  Blob<unsigned int> spatial_sum_multiplier_; // (1, 1, H, W)
+
   /// the probability @f$ p @f$ of dropping any input
   Dtype threshold_;
   /// the scale for undropped inputs at train time @f$ 1 / (1 - p) @f$
