@@ -216,6 +216,48 @@ class DropoutLayer : public NeuronLayer<Dtype> {
 };
 
 /**
+ * Dropout in channel direction
+ */
+template <typename Dtype>
+class DropoutChannelLayer : public NeuronLayer<Dtype> {
+ public:
+  explicit DropoutChannelLayer(const LayerParameter& param)
+      : NeuronLayer<Dtype>(param) {}
+  virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+  virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+
+  virtual inline LayerParameter_LayerType type() const {
+    return LayerParameter_LayerType_DROPOUT;
+  }
+
+ protected:
+  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+  virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+  virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+  virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+
+  int N_, C_, H_, W_;
+
+  Blob<Dtype> rand_mat_; // (N, C, H, W) 
+  Blob<Dtype> rand_vec_; // (N, C, 1, 1)
+
+  Blob<Dtype> spatial_sum_multiplier_; // (1, 1, H, W)
+
+  /// the probability @f$ p @f$ of dropping any input
+  Dtype threshold_;
+  /// the scale for undropped inputs at train time @f$ 1 / (1 - p) @f$
+  Dtype scale_;
+  unsigned int uint_thres_;
+};
+
+
+/**
  * @brief Computes @f$ y = \gamma ^ {\alpha x + \beta} @f$,
  *        as specified by the scale @f$ \alpha @f$, shift @f$ \beta @f$,
  *        and base @f$ \gamma @f$.
@@ -371,10 +413,15 @@ class ReLULayer : public NeuronLayer<Dtype> {
    */
   explicit ReLULayer(const LayerParameter& param)
       : NeuronLayer<Dtype>(param) {}
+  virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
 
   virtual inline LayerParameter_LayerType type() const {
     return LayerParameter_LayerType_RELU;
   }
+  virtual inline int ExactNumTopBlobs() const { return -1; }
+  virtual inline int MinTopBlobs() const { return 1; }
+  virtual inline int MaxTopBlobs() const { return 2; }
 
  protected:
   /**

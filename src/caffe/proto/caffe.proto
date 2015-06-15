@@ -207,7 +207,7 @@ message NetStateRule {
 // NOTE
 // Update the next available ID when you add a new LayerParameter field.
 //
-// LayerParameter next available ID: 46 (last added: bn_param)
+// LayerParameter next available ID: 51 (last added: select_seg_binary_param)
 message LayerParameter {
   repeated string bottom = 2; // the name of the bottom blobs
   repeated string top = 3; // the name of the top blobs
@@ -228,7 +228,7 @@ message LayerParameter {
   // line above the enum. Update the next available ID when you add a new
   // LayerType.
   //
-  // LayerType next available ID: 44 (last added: BN)
+  // LayerType next available ID: 54 (last added: DROPOUT_CHANNEL)
   enum LayerType {
     // "NONE" layer type is 0th enum element so that we don't cause confusion
     // by defaulting to an existent LayerType (instead, should usually error if
@@ -237,6 +237,7 @@ message LayerParameter {
     ABSVAL = 35;
     ACCURACY = 1;
     ARGMAX = 30;
+    BIN_ACCURACY = 49;
     BN = 43;
     BNLL = 2;
     CONCAT = 3;
@@ -246,6 +247,7 @@ message LayerParameter {
     DATA = 5;
     DECONVOLUTION = 39;
     DROPOUT = 6;
+    DROPOUT_CHANNEL = 53;
     DUMMY_DATA = 32;
     EUCLIDEAN_LOSS = 7;
     ELTWISE = 25;
@@ -257,6 +259,7 @@ message LayerParameter {
     HINGE_LOSS = 28;
     IM2COL = 11;
     IMAGE_DATA = 12;
+    IMAGE_SEG_DATA = 46;
     INFOGAIN_LOSS = 13;
     INNER_PRODUCT = 14;
     LRN = 15;
@@ -265,7 +268,10 @@ message LayerParameter {
     MVN = 34;
     POOLING = 17;
     POWER = 26;
+    RED_SOFTMAX_LOSS = 44;
+    RED_ACCURACY = 45;
     RELU = 18;
+    SELECT_SEG_BINARY = 52;
     SIGMOID = 19;
     SIGMOID_CROSS_ENTROPY_LOSS = 27;
     SILENCE = 36;
@@ -276,6 +282,10 @@ message LayerParameter {
     TANH = 23;
     UNPOOLING = 42; 
     WINDOW_DATA = 24;
+    WINDOW_CLS_DATA = 50;
+    WINDOW_SEG_DATA = 47;
+    WINDOW_SEG_BINARY = 51;
+    WINDOW_INST_SEG_DATA = 48;
     THRESHOLD = 31;
   }
   optional LayerType type = 5; // the layer type from the enum above
@@ -307,6 +317,7 @@ message LayerParameter {
 
   optional AccuracyParameter accuracy_param = 27;
   optional ArgMaxParameter argmax_param = 23;
+  optional BinaryAccuracyParameter binary_accuracy_param = 48;
   optional BNParameter bn_param = 45;
   optional ConcatParameter concat_param = 9;
   optional ContrastiveLossParameter contrastive_loss_param = 40;
@@ -328,13 +339,17 @@ message LayerParameter {
   optional MVNParameter mvn_param = 34;
   optional PoolingParameter pooling_param = 19;
   optional PowerParameter power_param = 21;
+  optional RedSoftmaxWithLossParameter red_softmax_loss_param = 46;
+  optional RedAccuracyParameter red_accuracy_param = 47;
   optional ReLUParameter relu_param = 30;
+  optional SelectSegBinaryParameter select_seg_binary_param = 50;
   optional SigmoidParameter sigmoid_param = 38;
   optional SoftmaxParameter softmax_param = 39;
   optional SliceParameter slice_param = 31;
   optional TanHParameter tanh_param = 37;
   optional ThresholdParameter threshold_param = 25;
   optional UnpoolingParameter unpooling_param = 44;
+  optional WindowClsDataParameter window_cls_data_param = 49;
   optional WindowDataParameter window_data_param = 20;
 
   // Parameters for data pre-processing.
@@ -373,6 +388,10 @@ message TransformationParameter {
   repeated float mean_value = 5;
 }
 
+message SelectSegBinaryParameter {
+  optional uint32 cls_label_base = 1 [default = 0];
+}
+
 // Message that stores parameters shared by loss layers
 message LossParameter {
   // If specified, ignore instances with the given label.
@@ -397,6 +416,16 @@ message ArgMaxParameter {
   optional uint32 top_k = 2 [default = 1];
 }
 
+// Message that stores parameters used by BN (Batch Normalization)  layer
+message BinaryAccuracyParameter {
+  enum AccuracyMode {
+    Accuracy = 0;
+    Precision = 1;
+    Recall = 2;
+    F_measure = 3; 
+  }
+  optional AccuracyMode accuracy_mode = 1 [default = Accuracy];
+}
 // Message that stores parameters used by BN (Batch Normalization)  layer
 message BNParameter {
   enum BNMode {
@@ -525,6 +554,17 @@ message EltwiseAccuracyParameter {
   optional int32 ignore_label = 2;
 }
 
+message RedAccuracyParameter {
+  // When computing Red Accuracy, count as correct by comparing the true label to
+  // the top k scoring classes.  By default, only compare to the top scoring
+  // class (i.e. argmax).
+  optional uint32 top_k = 1 [default = 1];
+  // If specified, ignore instances with the given label.
+  optional int32 ignore_label = 2;
+  // number of classes in ground truth label
+  optional uint32 class_num = 3;
+}
+
 // Message that stores parameters used by ExpLayer
 message ExpParameter {
   // ExpLayer computes outputs y = base ^ (shift + scale * x), for base > 0.
@@ -575,6 +615,15 @@ message ImageDataParameter {
   optional uint32 new_width = 10 [default = 0];
   // Specify if the images are color or gray
   optional bool is_color = 11 [default = true];
+  // This is the value seg for pixels or images where we don't know the label 
+  optional int32 ignore_label = 15 [default = 255];
+  optional int32 other_object_label = 17 [default = 0];
+  enum LabelType {
+    NONE = 0;
+    IMAGE = 1;
+    PIXEL = 2;
+  }
+  optional LabelType label_type = 16 [default = IMAGE];
   // DEPRECATED. See TransformationParameter. For data pre-processing, we can do
   // simple scaling and subtracting the data mean, if provided. Note that the
   // mean subtraction is always carried out before scaling.
@@ -587,6 +636,8 @@ message ImageDataParameter {
   // data.
   optional bool mirror = 6 [default = false];
   optional string root_folder = 12 [default = ""];
+  optional bool has_label = 13 [default = true];
+  optional int32 max_labels = 14 [default = 1];
 }
 
 // Message that stores parameters InfogainLossLayer
@@ -671,6 +722,11 @@ message PowerParameter {
   optional float shift = 3 [default = 0.0];
 }
 
+message RedSoftmaxWithLossParameter {
+  // number of classes in ground truth label
+  optional uint32 class_num = 1;
+} 
+
 // Message that stores parameters used by ReLULayer
 message ReLUParameter {
   // Allow non-zero slope for negative inputs to speed up optimization
@@ -736,6 +792,8 @@ message ThresholdParameter {
 message UnpoolingParameter {
   enum UnpoolMethod {
     MAX = 0;
+    AVE = 1;
+    TILE= 2;
   }
   optional UnpoolMethod unpool = 1 [default = MAX]; // The pooling method
   // Pad, kernel size, and stride are all given as a single value for equal
@@ -759,6 +817,10 @@ message UnpoolingParameter {
   optional Engine engine = 11 [default = DEFAULT];
 }
 
+// Message that stores parameters used by WindowClsDataLayer
+message WindowClsDataParameter { 
+  optional uint32 label_dim = 1 [default = 1];
+}
 
 // Message that stores parameters used by WindowDataLayer
 message WindowDataParameter {

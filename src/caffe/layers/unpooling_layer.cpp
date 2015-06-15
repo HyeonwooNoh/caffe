@@ -146,6 +146,64 @@ void UnpoolingLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       }
     }
     break;
+  case UnpoolingParameter_UnpoolMethod_AVE:
+     // The main loop
+    for (int n = 0; n < top[0]->num(); ++n) {
+      for (int c = 0; c < channels_; ++c) {
+        for (int ph = 0; ph < height_; ++ph) {
+          for (int pw = 0; pw < width_; ++pw) {
+            int hstart = ph * stride_h_ - pad_h_;
+            int wstart = pw * stride_w_ - pad_w_;
+            int hend = min(hstart + kernel_h_, unpooled_height_ + pad_h_);
+            int wend = min(wstart + kernel_w_, unpooled_width_ + pad_w_);
+            int pool_size = (hend - hstart) * (wend - wstart);
+            hstart = max(hstart, 0);
+            wstart = max(wstart, 0);
+            hend = min(hend, unpooled_height_);
+            wend = min(wend, unpooled_width_);
+            for (int h = hstart; h < hend; ++h) {
+              for (int w = wstart; w < wend; ++w) {
+                top_data[h * unpooled_width_ + w] +=
+                  bottom_data[ph * width_ + pw] / pool_size;
+              }
+            }
+          }
+        }
+        // offset
+        bottom_data += bottom[0]->offset(0, 1);
+        top_data += top[0]->offset(0, 1);
+      }
+    }
+    break;
+  case UnpoolingParameter_UnpoolMethod_TILE:
+     // The main loop
+    for (int n = 0; n < top[0]->num(); ++n) {
+      for (int c = 0; c < channels_; ++c) {
+        for (int ph = 0; ph < height_; ++ph) {
+          for (int pw = 0; pw < width_; ++pw) {
+            int hstart = ph * stride_h_ - pad_h_;
+            int wstart = pw * stride_w_ - pad_w_;
+            int hend = min(hstart + kernel_h_, unpooled_height_ + pad_h_);
+            int wend = min(wstart + kernel_w_, unpooled_width_ + pad_w_);
+            int pool_size = (hend - hstart) * (wend - wstart);
+            hstart = max(hstart, 0);
+            wstart = max(wstart, 0);
+            hend = min(hend, unpooled_height_);
+            wend = min(wend, unpooled_width_);
+            for (int h = hstart; h < hend; ++h) {
+              for (int w = wstart; w < wend; ++w) {
+                top_data[h * unpooled_width_ + w] +=
+                  bottom_data[ph * width_ + pw];
+              }
+            }
+          }
+        }
+        // offset
+        bottom_data += bottom[0]->offset(0, 1);
+        top_data += top[0]->offset(0, 1);
+      }
+    }
+    break;
   default:
     LOG(FATAL) << "Unknown unpooling method.";
   }
@@ -193,6 +251,72 @@ void UnpoolingLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
         if (use_bottom_mask) {
           bottom_mask += bottom[1]->offset(0, 1);
         } 
+      }
+    }
+    break;
+  case UnpoolingParameter_UnpoolMethod_AVE:
+    for (int i = 0; i < bottom[0]->count(); ++i) {
+      bottom_diff[i] = 0;
+    }
+    // The main loop
+    for (int n = 0; n < bottom[0]->num(); ++n) {
+      for (int c = 0; c < channels_; ++c) {
+        for (int ph = 0; ph < height_; ++ph) {
+          for (int pw = 0; pw < width_; ++pw) {
+            int hstart = ph * stride_h_ - pad_h_;
+            int wstart = pw * stride_w_ - pad_w_;
+            int hend = min(hstart + kernel_h_, unpooled_height_ + pad_h_);
+            int wend = min(wstart + kernel_w_, unpooled_width_ + pad_w_);
+            int pool_size = (hend - hstart) * (wend - wstart);
+            hstart = max(hstart, 0);
+            wstart = max(wstart, 0);
+            hend = min(hend, unpooled_height_);
+            wend = min(wend, unpooled_width_);
+            for (int h = hstart; h < hend; ++h) {
+              for (int w = wstart; w < wend; ++w) {
+                bottom_diff[ph * width_ + pw] +=
+                    top_diff[h * unpooled_width_ + w];
+              }
+            }
+            bottom_diff[ph * width_ + pw] /= pool_size;
+          }
+        }
+        // compute offset
+        bottom_diff += bottom[0]->offset(0, 1);
+        top_diff += top[0]->offset(0, 1);
+      }
+    }
+    break;
+  case UnpoolingParameter_UnpoolMethod_TILE:
+    for (int i = 0; i < bottom[0]->count(); ++i) {
+      bottom_diff[i] = 0;
+    }
+    // The main loop
+    for (int n = 0; n < bottom[0]->num(); ++n) {
+      for (int c = 0; c < channels_; ++c) {
+        for (int ph = 0; ph < height_; ++ph) {
+          for (int pw = 0; pw < width_; ++pw) {
+            int hstart = ph * stride_h_ - pad_h_;
+            int wstart = pw * stride_w_ - pad_w_;
+            int hend = min(hstart + kernel_h_, unpooled_height_ + pad_h_);
+            int wend = min(wstart + kernel_w_, unpooled_width_ + pad_w_);
+            int pool_size = (hend - hstart) * (wend - wstart);
+            hstart = max(hstart, 0);
+            wstart = max(wstart, 0);
+            hend = min(hend, unpooled_height_);
+            wend = min(wend, unpooled_width_);
+            for (int h = hstart; h < hend; ++h) {
+              for (int w = wstart; w < wend; ++w) {
+                bottom_diff[ph * width_ + pw] +=
+                    top_diff[h * unpooled_width_ + w];
+              }
+            }
+            bottom_diff[ph * width_ + pw] /= pool_size;
+          }
+        }
+        // compute offset
+        bottom_diff += bottom[0]->offset(0, 1);
+        top_diff += top[0]->offset(0, 1);
       }
     }
     break;
