@@ -78,6 +78,11 @@ void BasePrefetchingDataLayer<Dtype>::Forward_cpu(
    * Jay add
    *
    */
+/*
+ notice:
+ this code is based on the following implementation.
+ https://bitbucket.org/deeplab/deeplab-public/
+ */
 template <typename Dtype>
 void ImageDimPrefetchingDataLayer<Dtype>::LayerSetUp(
     const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {

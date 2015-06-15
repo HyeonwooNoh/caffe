@@ -23,6 +23,11 @@ void BasePrefetchingDataLayer<Dtype>::Forward_gpu(
    * Jay add
    *
    */
+/*
+ notice:
+ this code is based on the following implementation.
+ https://bitbucket.org/deeplab/deeplab-public/
+ */
 template <typename Dtype>
 void ImageDimPrefetchingDataLayer<Dtype>::Forward_gpu(
     const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {

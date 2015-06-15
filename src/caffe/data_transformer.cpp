@@ -278,6 +278,11 @@ void DataTransformer<Dtype>::Transform(const cv::Mat& cv_img,
   }
 }
 
+/*
+ notice:
+ this code is based on the following implementation.
+ https://bitbucket.org/deeplab/deeplab-public/
+ */
 template<typename Dtype>
 void DataTransformer<Dtype>::TransformImgAndSeg(const std::vector<cv::Mat>& cv_img_seg,
   Blob<Dtype>* transformed_data_blob, Blob<Dtype>* transformed_label_blob, const int ignore_label) {

@@ -1,3 +1,9 @@
+/*
+ notice:
+ this code is based on the following implementation.
+ https://bitbucket.org/deeplab/deeplab-public/
+ */
+
 #include <fstream>  // NOLINT(readability/streams)
 #include <iostream>  // NOLINT(readability/streams)
 #include <string>

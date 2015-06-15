@@ -341,6 +341,12 @@ class WindowDataLayer : public BasePrefetchingDataLayer<Dtype> {
  */
 template <typename Dtype>
 class ImageDimPrefetchingDataLayer : public BasePrefetchingDataLayer<Dtype> {
+/*
+ notice:
+ this code is based on the following implementation.
+ https://bitbucket.org/deeplab/deeplab-public/
+ */
+
  public:
   explicit ImageDimPrefetchingDataLayer(const LayerParameter& param)
       : BasePrefetchingDataLayer<Dtype>(param) {}
