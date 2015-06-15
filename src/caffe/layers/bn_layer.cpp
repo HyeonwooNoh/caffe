@@ -1,3 +1,16 @@
+/*
+notice:
+this code is based on the implementation of by following authors.
+
+ducha-aiki: https://github.com/ducha-aiki
+ChenglongChen: https://github.com/ChenglongChen
+Russell91: https://github.com/Russell91
+jjkjkj: https://github.com/jjkjkj
+
+detailed discussion of this implementation can be found at:
+https://github.com/BVLC/caffe/pull/1965
+*/
+
 #include <algorithm>
 #include <vector>
 
