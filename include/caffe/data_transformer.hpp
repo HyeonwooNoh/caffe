@@ -76,6 +76,10 @@ class DataTransformer {
   void TransformImgAndSeg(const std::vector<cv::Mat>& cv_img_seg,
     Blob<Dtype>* transformed_data_blob, Blob<Dtype>* transformed_label_blob,
     const int ignore_label);
+
+  void TransformImgSegCtrl(const std::vector<cv::Mat>& cv_img_seg,
+    Blob<Dtype>* transformed_data_blob, Blob<Dtype>* transformed_label_blob,
+    Blob<Dtype>* transformed_ctrl_blob, const int ignore_label);
 #endif
 
   /**
