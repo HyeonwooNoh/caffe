@@ -333,6 +333,34 @@ class WindowDataLayer : public BasePrefetchingDataLayer<Dtype> {
   bool cache_images_;
   vector<std::pair<std::string, Datum > > image_database_cache_;
 };
+/** hyeonwoonoh add
+ *
+ * TODO(dox): thorough documentation for Forward and proto params.
+ */
+template <typename Dtype>
+class ImageSegCtrlPrefetchingDataLayer : public BasePrefetchingDataLayer<Dtype> {
+ public:
+  explicit ImageSegCtrlPrefetchingDataLayer(const LayerParameter& param)
+      : BasePrefetchingDataLayer<Dtype>(param) {}
+  virtual ~ImageSegCtrlPrefetchingDataLayer() {}
+  // LayerSetUp: implements common data layer setup functionality, and calls
+  // DataLayerSetUp to do special data layer setup for individual layer types.
+  // This method may not be overridden.
+  void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+
+  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+  virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+
+  // The thread's function
+  virtual void InternalThreadEntry() {}
+
+ protected:
+  Blob<Dtype> prefetch_ctrl_data_;
+  bool output_ctrl_data_;
+};
 
 /** Jay add
  * @brief prefetching data layer which also prefetches data dimensions
