@@ -186,16 +186,84 @@ void ImageSegCtrlPrefetchingDataLayer<Dtype>::Forward_cpu(
   BasePrefetchingDataLayer<Dtype>::CreatePrefetchThread();
 }
 
+/* 
+ * hyeonwoonoh add
+ */
+template <typename Dtype>
+void ImageSegCtrlClsPrefetchingDataLayer<Dtype>::LayerSetUp(
+    const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
+  BaseDataLayer<Dtype>::LayerSetUp(bottom, top);
+  if (top.size() == 4) {
+    output_cls_data_ = true;
+    output_ctrl_data_ = true;
+  } 
+  else if (top.size() == 3) {
+    output_cls_data_ = false;
+    output_ctrl_data_ = true;
+  } else {
+    output_cls_data_ = false;
+    output_ctrl_data_ = false;
+  }
+  // Now, start the prefetch thread. Before calling prefetch, we make two
+  // cpu_data calls so that the prefetch thread does not accidentally make
+  // simultaneous cudaMalloc calls when the main thread is running. In some
+  // GPUs this seems to cause failures if we do not so.
+  this->prefetch_data_.mutable_cpu_data();
+  if (this->output_labels_) {
+    this->prefetch_label_.mutable_cpu_data();
+  }
+  if (this->output_ctrl_data_) {
+    this->prefetch_ctrl_data_.mutable_cpu_data();
+  }
+  if (this->output_cls_data_) {
+    this->prefetch_cls_data_.mutable_cpu_data();
+  }
+
+  DLOG(INFO) << "Initializing prefetch";
+  BasePrefetchingDataLayer<Dtype>::CreatePrefetchThread();
+  DLOG(INFO) << "Prefetch initialized.";
+}
+
+template <typename Dtype>
+void ImageSegCtrlClsPrefetchingDataLayer<Dtype>::Forward_cpu(
+    const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
+  // First, join the thread
+  BasePrefetchingDataLayer<Dtype>::JoinPrefetchThread();
+  DLOG(INFO) << "Thread joined";
+  // Copy the data
+  caffe_copy(this->prefetch_data_.count(), this->prefetch_data_.cpu_data(),
+             top[0]->mutable_cpu_data());
+  DLOG(INFO) << "Prefetch copied";
+  if (this->output_labels_) {
+    caffe_copy(this->prefetch_label_.count(), this->prefetch_label_.cpu_data(),
+               top[1]->mutable_cpu_data());
+  }
+  if (this->output_ctrl_data_) {
+    caffe_copy(this->prefetch_ctrl_data_.count(), this->prefetch_ctrl_data_.cpu_data(),
+               top[2]->mutable_cpu_data());
+  }
+  if (this->output_cls_data_) {
+    caffe_copy(this->prefetch_cls_data_.count(), this->prefetch_cls_data_.cpu_data(),
+               top[3]->mutable_cpu_data());
+  }
+
+  // Start a new prefetch thread
+  DLOG(INFO) << "CreatePrefetchThread";
+  BasePrefetchingDataLayer<Dtype>::CreatePrefetchThread();
+}
+
 
 #ifdef CPU_ONLY
 STUB_GPU_FORWARD(BasePrefetchingDataLayer, Forward);
 STUB_GPU_FORWARD(ImageDimPrefetchingDataLayer, Forward);
 STUB_GPU_FORWARD(ImageSegCtrlPrefetchingDataLayer, Forward);
+STUB_GPU_FORWARD(ImageSegCtrlClsPrefetchingDataLayer, Forward);
 #endif
 
 INSTANTIATE_CLASS(BaseDataLayer);
 INSTANTIATE_CLASS(BasePrefetchingDataLayer);
 INSTANTIATE_CLASS(ImageDimPrefetchingDataLayer);
 INSTANTIATE_CLASS(ImageSegCtrlPrefetchingDataLayer);
+INSTANTIATE_CLASS(ImageSegCtrlClsPrefetchingDataLayer);
 
 }  // namespace caffe
